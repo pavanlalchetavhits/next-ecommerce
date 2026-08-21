@@ -115,7 +115,7 @@ export default function AdminSidebar() {
 
         {/* Fixed Bottom Section: Security Badge & Logout Button */}
         <div className="space-y-3 pt-4 border-t border-[#E9EDF7] mt-auto shrink-0">
-          <div className="rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50/50 to-white p-3">
+          {/* <div className="rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50/50 to-white p-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-[#6366F1]">
                 <ShieldCheck className="h-3.5 w-3.5" />
@@ -125,7 +125,7 @@ export default function AdminSidebar() {
                 <p className="text-[10px] text-[#707EAE]">v2.4 Secure Active</p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <button
             onClick={() =>
