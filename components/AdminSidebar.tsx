@@ -10,6 +10,7 @@ import {
   Warehouse,
   ShoppingBag,
   Ticket,
+  MessageSquare,
   Settings,
   Sparkles,
   ShieldCheck,
@@ -46,6 +47,11 @@ const menuItems = [
     label: 'Coupons',
     href: '/admin/coupons',
     icon: Ticket,
+  },
+  {
+    label: 'Reviews',
+    href: '/admin/reviews',
+    icon: MessageSquare,
   },
   {
     label: 'Settings',
