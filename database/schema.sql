@@ -505,6 +505,41 @@ CREATE TABLE coupons (
 ) ENGINE=InnoDB;
 
 
+CREATE TABLE coupon_usages (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    coupon_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    order_id BIGINT UNSIGNED NOT NULL,
+
+    discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+
+    used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_coupon_usages_coupon
+        FOREIGN KEY (coupon_id)
+        REFERENCES coupons(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_coupon_usages_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_coupon_usages_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_coupon_usages_coupon (coupon_id),
+    INDEX idx_coupon_usages_user (user_id),
+    INDEX idx_coupon_usages_order (order_id)
+
+) ENGINE=InnoDB;
+
 -- ============================================================
 -- 15. REVIEWS
 -- ============================================================
