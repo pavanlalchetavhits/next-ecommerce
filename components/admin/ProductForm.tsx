@@ -511,7 +511,7 @@ export default function ProductForm({
             {/* Short Description */}
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                Short Description (CKEditor)
+                Short Description
               </label>
               <CKEditorWrapper
                 value={formData.short_description}
@@ -525,7 +525,7 @@ export default function ProductForm({
             {/* Full Description */}
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                Full Description (CKEditor)
+                Full Description
               </label>
               <CKEditorWrapper
                 value={formData.description}
@@ -835,7 +835,7 @@ export default function ProductForm({
             <div>
               <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1 flex items-center gap-1.5">
                 <HeartHandshake className="h-3.5 w-3.5 text-rose-500" />
-                <span>Care Instructions (CKEditor)</span>
+                <span>Care Instructions</span>
               </label>
               <CKEditorWrapper
                 value={formData.care_instructions}
@@ -850,7 +850,7 @@ export default function ProductForm({
             <div>
               <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1 flex items-center gap-1.5">
                 <Truck className="h-3.5 w-3.5 text-blue-500" />
-                <span>Shipping Information (CKEditor)</span>
+                <span>Shipping Information</span>
               </label>
               <CKEditorWrapper
                 value={formData.shipping_info}
