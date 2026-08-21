@@ -1,26 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* NexCart Professional E-Commerce Typography Tokens */
+  --font-display: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  --font-title: var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Modern NexCart Color Tokens */
+  --bg-light-base: #F4F7FE;
+  --card-light-surface: #FFFFFF;
+  --brand-primary: #6366F1;
+  --brand-secondary: #4F46E5;
+  --text-dark: #0F172A;
+  --text-muted: #707EAE;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #F4F7FE;
+  --foreground: #0F172A;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Typography Hierarchy Utilities */
+h1, h2, .font-display {
+  font-family: var(--font-display);
+}
+
+h3, h4, h5, .font-title {
+  font-family: var(--font-title);
+}
+
+code, pre, .font-mono, .tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
