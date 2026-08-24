@@ -15,6 +15,7 @@ import {
   Sparkles,
   ShieldCheck,
   LogOut,
+  CreditCard,
 } from 'lucide-react';
 
 const menuItems = [
@@ -42,6 +43,11 @@ const menuItems = [
     label: 'Orders',
     href: '/admin/orders',
     icon: ShoppingBag,
+  },
+  {
+    label: 'Payments',
+    href: '/admin/payments',
+    icon: CreditCard,
   },
   {
     label: 'Coupons',
