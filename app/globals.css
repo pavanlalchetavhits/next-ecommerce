@@ -8,22 +8,25 @@
   --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
 
   /* Modern NexCart Color Tokens */
-  --bg-light-base: #F4F7FE;
+  --bg-light-base: #f8f5ff;
   --card-light-surface: #FFFFFF;
-  --brand-primary: #6366F1;
+  --brand-primary: #5b46f6;
   --brand-secondary: #4F46E5;
   --text-dark: #0F172A;
   --text-muted: #707EAE;
 
-  --background: #F4F7FE;
+  --background: #f8f5ff;
   --foreground: #0F172A;
 }
 
 body {
-  background-color: var(--background);
+  background-color: #f8f5ff;
+  background-image: linear-gradient(to bottom right, #f5f0ff, #f8f5ff, #eee8fd);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-body);
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  min-height: 100vh;
 }
 
 /* Typography Hierarchy Utilities */
@@ -39,3 +42,52 @@ code, pre, .font-mono, .tabular-nums {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* Custom Micro-Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 5s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
+}
+

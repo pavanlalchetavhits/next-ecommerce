@@ -36,6 +36,7 @@ export default function MuiSelect({
       }}
     >
       <Select
+        displayEmpty
         name={name}
         value={value}
         onChange={(e) => onChange(e as SelectChangeEvent<string | number>)}
