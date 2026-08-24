@@ -15,6 +15,7 @@ interface MuiSelectProps {
   disabled?: boolean;
   name?: string;
   fullWidth?: boolean;
+  maxWidth?: string | number;
 }
 
 export default function MuiSelect({
@@ -24,9 +25,16 @@ export default function MuiSelect({
   disabled = false,
   name,
   fullWidth = true,
+  maxWidth,
 }: MuiSelectProps) {
   return (
-    <FormControl fullWidth={fullWidth} size="small">
+    <FormControl
+      fullWidth={fullWidth}
+      size="small"
+      sx={{
+        maxWidth: maxWidth || 'none',
+      }}
+    >
       <Select
         name={name}
         value={value}
@@ -52,7 +60,10 @@ export default function MuiSelect({
             borderWidth: '2px',
           },
           '& .MuiSelect-select': {
-            padding: '10px 14px',
+            padding: '8px 14px',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
           },
         }}
         MenuProps={{
@@ -61,6 +72,7 @@ export default function MuiSelect({
               sx: {
                 borderRadius: '14px',
                 marginTop: '6px',
+                maxHeight: '260px',
                 boxShadow:
                   '0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1)',
                 border: '1px solid #E9EDF7',
@@ -68,7 +80,7 @@ export default function MuiSelect({
                   fontSize: '0.875rem',
                   fontWeight: 600,
                   color: '#0F172A',
-                  padding: '10px 16px',
+                  padding: '8px 14px',
                   borderRadius: '8px',
                   margin: '2px 6px',
                   '&:hover': {
