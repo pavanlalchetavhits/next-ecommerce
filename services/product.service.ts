@@ -1,7 +1,44 @@
 import db from '@/lib/db';
 import { ProductInput } from '@/lib/validations/products';
 import { syncProductImages } from '@/services/product-image.service';
-export async function getProducts() {
+export interface ProductFilters {
+    search?: string;
+    category_id?: number | string;
+    sort?: string;
+    featured?: boolean;
+}
+
+export async function getProducts(filters: ProductFilters = {}) {
+    const whereClauses: string[] = [];
+    const queryParams: any[] = [];
+
+    if (filters.search && filters.search.trim()) {
+        const searchTerm = `%${filters.search.trim()}%`;
+        whereClauses.push('(p.name LIKE ? OR p.description LIKE ? OR p.short_description LIKE ? OR p.sku LIKE ? OR c.name LIKE ?)');
+        queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (filters.category_id && !isNaN(Number(filters.category_id))) {
+        whereClauses.push('p.category_id = ?');
+        queryParams.push(Number(filters.category_id));
+    }
+
+    if (filters.featured) {
+        whereClauses.push('p.featured = 1');
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    let orderBySql = 'ORDER BY p.created_at DESC';
+    if (filters.sort === 'price_low') {
+        orderBySql = 'ORDER BY p.price ASC';
+    } else if (filters.sort === 'price_high') {
+        orderBySql = 'ORDER BY p.price DESC';
+    } else if (filters.sort === 'name_asc') {
+        orderBySql = 'ORDER BY p.name ASC';
+    } else if (filters.sort === 'name_desc') {
+        orderBySql = 'ORDER BY p.name DESC';
+    }
 
     const [rows] = await db.query(`
         select
@@ -35,9 +72,10 @@ export async function getProducts() {
 
         left join categories c
             ON p.category_id = c.id
+        ${whereSql}
+        ${orderBySql}
+        `, queryParams);
 
-        ORDER BY p.created_at DESC
-        `)
     return rows;
 }
 
@@ -113,6 +151,70 @@ export async function getProductById(id:number)
     return {
         ...product,
         images,
+    };
+}
+
+export async function getProductByIdOrSlug(idOrSlug: string | number) {
+    const isId = !isNaN(Number(idOrSlug));
+    const whereSql = isId ? 'p.id = ?' : 'p.slug = ?';
+    const param = isId ? Number(idOrSlug) : String(idOrSlug);
+
+    const [rows] = await db.query(`
+        select
+            p.id,
+            p.category_id,
+            p.name,
+            p.slug,
+            p.description,
+            p.short_description,
+            p.care_instructions,
+            p.specifications,
+            p.shipping_info,
+            p.faq,
+            p.sku,
+            p.price,
+            p.compare_at_price,
+            p.status,
+            p.featured,
+            p.created_at,
+            p.updated_at,
+            c.name as category_name
+        from products p
+        left join categories c ON p.category_id = c.id
+        where ${whereSql}
+        limit 1
+    `, [param]);
+
+    const productsRows = rows as any[];
+    if (productsRows.length === 0) return null;
+
+    const product = productsRows[0];
+
+    if (typeof product.specifications === 'string') {
+        try {
+            product.specifications = JSON.parse(product.specifications);
+        } catch {
+            // Keep string HTML content if rich text
+        }
+    }
+    if (typeof product.faq === 'string') {
+        try {
+            product.faq = JSON.parse(product.faq);
+        } catch {
+            product.faq = [];
+        }
+    }
+
+    const [images] = await db.query(`
+        select id, image_url, alt_text, is_primary, sort_order
+        from product_images
+        where product_id = ?
+        order by is_primary desc, sort_order asc, id asc
+    `, [product.id]);
+
+    return {
+        ...product,
+        images: images as any[],
     };
 }
 

@@ -6,27 +6,38 @@ import {
 
 import { productSchema } from "@/lib/validations/products";
 
-export async function GET() {
-    try{
-        const products = await getProducts();
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const search = searchParams.get("search") || undefined;
+        const category = searchParams.get("category") || undefined;
+        const sort = searchParams.get("sort") || undefined;
+        const featuredParam = searchParams.get("featured");
+        const featured = featuredParam === "true" ? true : undefined;
+
+        const products = await getProducts({
+            search,
+            category_id: category,
+            sort,
+            featured,
+        });
 
         return NextResponse.json({
-            success:true,
-            data:products,
-        })
+            success: true,
+            data: products,
+        });
     }
-    catch(error)
-    {   
-        console.error('GET product error:',error);
+    catch (error) {
+        console.error('GET product error:', error);
 
         return NextResponse.json(
             {
-                success:false,
-                message:'Failed to fetch products'
-            },{
+                success: false,
+                message: 'Failed to fetch products'
+            }, {
                 status: 500
             }
-        )
+        );
     }
 }
 

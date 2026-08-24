@@ -11,6 +11,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  UploadCloud,
+  Image as ImageIcon,
 } from 'lucide-react';
 import api from '@/lib/axios';
 import MuiSelect from '@/components/ui/MuiSelect';
@@ -43,14 +45,43 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
     name: '',
     slug: '',
     description: '',
+    image: '',
     status: 'active' as 'active' | 'inactive',
     sort_order: 0,
   });
 
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState('');
+
+  // File Upload Handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError('');
+
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+
+    try {
+      const res = await api.post('/api/upload/image', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.data?.success && res.data?.data?.url) {
+        setFormData((prev) => ({ ...prev, image: res.data.data.url }));
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
 
   // Auto-generate slug from name
   const handleNameChange = (nameVal: string) => {
@@ -75,6 +106,7 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
       name: '',
       slug: '',
       description: '',
+      image: '',
       status: 'active',
       sort_order: 0,
     });
@@ -90,6 +122,7 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
       name: cat.name,
       slug: cat.slug,
       description: cat.description || '',
+      image: cat.image || '',
       status: cat.status || 'active',
       sort_order: cat.sort_order || 0,
     });
@@ -258,7 +291,7 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-[#F1F5F9] text-xs font-bold text-[#94A3B8] uppercase">
-                  <th className="py-3 px-4">Name</th>
+                  <th className="py-3 px-4">Category</th>
                   <th className="py-3 px-4">Slug</th>
                   <th className="py-3 px-4">Description</th>
                   <th className="py-3 px-4">Status</th>
@@ -270,7 +303,20 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
                 {categories.map((cat) => (
                   <tr key={cat.id} className="group hover:bg-[#F8FAFC]">
                     <td className="py-4 px-4 font-bold text-[#0F172A]">
-                      {cat.name}
+                      <div className="flex items-center gap-3">
+                        {cat.image ? (
+                          <img
+                            src={cat.image}
+                            alt={cat.name}
+                            className="h-10 w-10 rounded-xl object-cover border border-[#E9EDF7] shadow-xs shrink-0 bg-[#F8FAFC]"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-[#6366F1] shrink-0 border border-[#E9EDF7]">
+                            <FolderTree className="h-5 w-5" />
+                          </div>
+                        )}
+                        <span>{cat.name}</span>
+                      </div>
                     </td>
                     <td className="py-4 px-4 font-mono text-xs text-[#6366F1]">
                       {cat.slug}
@@ -324,7 +370,7 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
       {/* --- ADD / EDIT MODAL --- */}
       {(isAddOpen || editingCategory) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-[#E9EDF7] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-[#E9EDF7] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#E9EDF7] pb-4">
               <div className="flex items-center gap-2.5">
@@ -373,7 +419,7 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Electronics, Footwear"
+                  placeholder="e.g. Wooden Swings, Outdoor Furniture"
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   className={`w-full rounded-xl border bg-[#F8FAFC] p-2.5 text-sm text-[#0F172A] outline-none transition-all focus:bg-white ${
@@ -396,7 +442,7 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. electronics"
+                  placeholder="e.g. wooden-swings"
                   value={formData.slug}
                   onChange={(e) =>
                     setFormData({ ...formData, slug: e.target.value })
@@ -415,12 +461,80 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
                 )}
               </div>
 
+              {/* Category Image Upload */}
+              <div>
+                <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
+                  Category Banner Image
+                </label>
+
+                {formData.image ? (
+                  <div className="relative rounded-xl border border-[#E9EDF7] p-2 bg-[#F8FAFC] flex items-center gap-3">
+                    <img
+                      src={formData.image}
+                      alt="Category preview"
+                      className="h-14 w-14 rounded-lg object-cover border border-[#E9EDF7] bg-white"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[#0F172A] truncate">
+                        Image Attached
+                      </p>
+                      <p className="text-[11px] text-[#94A3B8] truncate font-mono">
+                        {formData.image}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, image: '' })}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 cursor-pointer hover:border-[#6366F1] hover:bg-indigo-50/30 transition-all">
+                      {uploadingImage ? (
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#6366F1]">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Uploading image...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#64748B]">
+                          <UploadCloud className="h-4 w-4 text-[#6366F1]" />
+                          <span>Upload File (JPG, PNG, WEBP)</span>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingImage}
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4 text-[#94A3B8] shrink-0" />
+                      <input
+                        type="url"
+                        placeholder="Or paste direct image URL (https://...)"
+                        value={formData.image}
+                        onChange={(e) =>
+                          setFormData({ ...formData, image: e.target.value })
+                        }
+                        className="w-full rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] p-2.5 text-xs text-[#0F172A] outline-none focus:border-[#6366F1] focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
                   Description (Optional)
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Brief description of this category..."
                   value={formData.description}
                   onChange={(e) =>
@@ -545,3 +659,4 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
     </div>
   );
 }
+
