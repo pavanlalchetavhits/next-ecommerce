@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 import {
   getOrders,
+  createOrder,
 } from "@/services/order.service";
 
 export async function GET(
@@ -47,6 +49,39 @@ export async function GET(
       {
         status: 500,
       }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+    const userId = (session?.user as any)?.id || 1;
+
+    const body = await request.json();
+
+    if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Cart items are required to place an order.' },
+        { status: 400 }
+      );
+    }
+
+    const orderResult = await createOrder({
+      user_id: Number(userId),
+      ...body,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order created successfully',
+      data: orderResult,
+    });
+  } catch (error: any) {
+    console.error('POST /api/orders error:', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'Failed to place order' },
+      { status: 500 }
     );
   }
 }

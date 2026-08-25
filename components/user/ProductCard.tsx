@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Heart, Sparkles, ShoppingBag } from 'lucide-react';
 
@@ -20,7 +23,9 @@ export default function ProductCard({
 }: {
   product: Product;
 }) {
-  const imageSrc = product.primary_image || product.mainImage || product.image_url;
+  const [imgErr, setImgErr] = useState(false);
+  const rawImageSrc = product.primary_image || product.mainImage || product.image_url;
+  const imageSrc = imgErr || !rawImageSrc ? '/hero-img.png' : rawImageSrc;
 
   // Strip HTML tags if description/short_description contains HTML string from rich editor
   const rawDesc = product.short_description || product.description || '';
@@ -36,18 +41,12 @@ export default function ProductCard({
     >
       {/* Top Image Container - Pure White Unified with Card */}
       <div className="relative aspect-square w-full overflow-hidden bg-white p-5 flex items-center justify-center">
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt={product.name}
-            className="h-full w-full object-contain object-center transition-transform duration-700 ease-out group-hover:scale-108"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-1.5 text-xs font-semibold text-slate-400">
-            <ShoppingBag className="h-8 w-8 stroke-1 text-slate-300" />
-            <span>No Image</span>
-          </div>
-        )}
+        <img
+          src={imageSrc}
+          alt={product.name}
+          onError={() => setImgErr(true)}
+          className="h-full w-full object-contain object-center transition-transform duration-700 ease-out group-hover:scale-108"
+        />
 
         {/* Category Pill Tag */}
         {product.category_name && (

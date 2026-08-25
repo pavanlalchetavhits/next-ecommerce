@@ -15,16 +15,32 @@ export async function GET(request: Request) {
         const featuredParam = searchParams.get("featured");
         const featured = featuredParam === "true" ? true : undefined;
 
-        const products = await getProducts({
+        const pageParam = searchParams.get("page");
+        const limitParam = searchParams.get("limit");
+
+        const page = pageParam ? parseInt(pageParam, 10) : undefined;
+        const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+
+        const result: any = await getProducts({
             search,
             category_id: category,
             sort,
             featured,
+            page,
+            limit,
         });
+
+        if (result && typeof result === 'object' && 'products' in result) {
+            return NextResponse.json({
+                success: true,
+                data: result.products,
+                pagination: result.pagination,
+            });
+        }
 
         return NextResponse.json({
             success: true,
-            data: products,
+            data: result,
         });
     }
     catch (error) {

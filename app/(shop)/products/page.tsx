@@ -10,8 +10,11 @@ import {
   Sparkles,
   PackageX,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import ProductCard from "@/components/user/ProductCard";
+import Pagination from "@/components/ui/Pagination";
 
 import { TextField, InputAdornment } from "@mui/material";
 import MuiSelect from "@/components/ui/MuiSelect";
@@ -32,6 +35,13 @@ type Category = {
   name: string;
 };
 
+type PaginationInfo = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -39,6 +49,15 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [sort, setSort] = useState("latest");
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    total: 0,
+    page: 1,
+    limit: 12,
+    totalPages: 1,
+  });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,6 +79,9 @@ export default function ProductsPage() {
         params.set("sort", sort);
       }
 
+      params.set("page", String(page));
+      params.set("limit", "12");
+
       const response = await axios.get(`/api/products?${params.toString()}`);
 
       const dataArray = Array.isArray(response.data?.data)
@@ -71,6 +93,17 @@ export default function ProductsPage() {
         : [];
 
       setProducts(dataArray);
+
+      if (response.data?.pagination) {
+        setPagination(response.data.pagination);
+      } else {
+        setPagination({
+          total: dataArray.length,
+          page: 1,
+          limit: 12,
+          totalPages: 1,
+        });
+      }
     } catch (err) {
       console.error(err);
       setError(
@@ -99,9 +132,10 @@ export default function ProductsPage() {
     }
   }
 
+  // Fetch when filters or page change
   useEffect(() => {
     FetchProducts();
-  }, [category, sort]);
+  }, [category, sort, page]);
 
   useEffect(() => {
     fetchCategories();
@@ -111,6 +145,17 @@ export default function ProductsPage() {
     setSearch("");
     setCategory("");
     setSort("latest");
+    setPage(1);
+  }
+
+  function handleCategoryChange(val: string) {
+    setCategory(val);
+    setPage(1);
+  }
+
+  function handleSortChange(val: string) {
+    setSort(val);
+    setPage(1);
   }
 
   const isFiltered = search.trim() !== "" || category !== "" || sort !== "latest";
@@ -129,9 +174,9 @@ export default function ProductsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       {/* Page Header */}
-      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-purple-200/50 pb-6">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-purple-200/50 pb-6">
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3 py-1 text-xs font-bold text-[#5b46f6] mb-3">
             <Sparkles className="h-3.5 w-3.5" />
@@ -141,7 +186,7 @@ export default function ProductsPage() {
             Explore Our Collection
           </h1>
           <p className="mt-2 text-sm text-slate-600 max-w-xl">
-            Discover handcrafted furniture & home decor designed for style, comfort, and longevity.
+            Discover premium gadgets, wearables, home essentials & lifestyle products.
           </p>
         </div>
 
@@ -150,25 +195,28 @@ export default function ProductsPage() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs border border-purple-100">
               <span className="h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-              {Array.isArray(products) ? products.length : 0} Products Listed
+              {pagination.total} Products Total
             </span>
           </div>
         )}
       </div>
 
       {/* Modern Filter Toolbar */}
-      <div className="mb-10 rounded-2xl border border-purple-100 bg-white/70 backdrop-blur-md p-4 sm:p-5 shadow-xs">
+      <div className="rounded-2xl border border-purple-100 bg-white/70 backdrop-blur-md p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           
           {/* MUI Search Input */}
           <div className="flex-1">
             <TextField
               size="small"
-              placeholder="Search by name, material, or keyword..."
+              placeholder="Search by product name, model, or keyword..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") FetchProducts();
+                if (e.key === "Enter") {
+                  setPage(1);
+                  FetchProducts();
+                }
               }}
               fullWidth
               slotProps={{
@@ -184,6 +232,7 @@ export default function ProductsPage() {
                         type="button"
                         onClick={() => {
                           setSearch("");
+                          setPage(1);
                           setTimeout(() => FetchProducts(), 0);
                         }}
                         className="text-slate-400 hover:text-slate-600 cursor-pointer"
@@ -219,7 +268,7 @@ export default function ProductsPage() {
             <div className="sm:w-48">
               <MuiSelect
                 value={category}
-                onChange={(e) => setCategory(String(e.target.value))}
+                onChange={(e) => handleCategoryChange(String(e.target.value))}
                 options={categoryOptions}
                 fullWidth
               />
@@ -228,7 +277,7 @@ export default function ProductsPage() {
             <div className="sm:w-48">
               <MuiSelect
                 value={sort}
-                onChange={(e) => setSort(String(e.target.value))}
+                onChange={(e) => handleSortChange(String(e.target.value))}
                 options={sortOptions}
                 fullWidth
               />
@@ -239,8 +288,11 @@ export default function ProductsPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={FetchProducts}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#5b46f6] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 hover:bg-[#4a36e3] active:scale-95 transition-all flex-1 sm:flex-none"
+              onClick={() => {
+                setPage(1);
+                FetchProducts();
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#5b46f6] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 hover:bg-[#4a36e3] active:scale-95 transition-all flex-1 sm:flex-none cursor-pointer"
             >
               <Search className="h-4 w-4" />
               <span>Search</span>
@@ -251,7 +303,7 @@ export default function ProductsPage() {
                 type="button"
                 onClick={handleReset}
                 title="Reset Filters"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-xs hover:bg-slate-50 hover:text-slate-900 active:scale-95 transition-all"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-xs hover:bg-slate-50 hover:text-slate-900 active:scale-95 transition-all cursor-pointer"
               >
                 <RotateCcw className="h-4 w-4" />
                 <span className="hidden sm:inline">Reset</span>
@@ -264,7 +316,7 @@ export default function ProductsPage() {
 
       {/* Error Alert */}
       {error && (
-        <div className="mb-8 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm font-semibold text-red-600">
+        <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm font-semibold text-red-600">
           <X className="h-5 w-5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -273,7 +325,7 @@ export default function ProductsPage() {
       {/* Product Content Grid */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }, (_, idx) => (
+          {Array.from({ length: 12 }, (_, idx) => (
             <div key={idx} className="rounded-2xl border border-slate-200/60 bg-white/40 p-4 space-y-4">
               <div className="aspect-square animate-pulse rounded-xl bg-slate-200/70" />
               <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200/70" />
@@ -293,20 +345,34 @@ export default function ProductsPage() {
           <button
             type="button"
             onClick={handleReset}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#5b46f6] px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-[#4a36e3] transition-all"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#5b46f6] px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-[#4a36e3] transition-all cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Clear Filters</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+        <div className="space-y-10">
+          {/* Products Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {/* Reusable Pagination Component */}
+          <Pagination
+            currentPage={page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={(newPage) => {
+              setPage(newPage);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         </div>
       )}
     </div>
   );
 }
-

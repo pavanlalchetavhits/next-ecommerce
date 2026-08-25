@@ -17,14 +17,20 @@ import {
   Heart,
   Compass,
 } from 'lucide-react';
+import { useCartStore } from '@/app/store/cartstore';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Cart items count simulation (can be bound to zustand cart store)
-  const cartCount = 2;
+  // Dynamic Cart unique items count from Zustand store
+  const items = useCartStore((state) => state.items);
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    setCartCount((items || []).length);
+  }, [items]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -138,8 +144,8 @@ export default function Navbar() {
 
             {/* Shopping Cart Button */}
             <Link
-              href="/payment"
-              className="flex relative items-center justify-center w-10 h-10 rounded-full bg-[#5b46f6] text-white shadow-md shadow-indigo-500/20 hover:bg-[#4338ca] hover:scale-110 active:scale-95 transition-all duration-300 group"
+              href="/cart"
+              className="flex relative items-center justify-center w-10 h-10 rounded-full bg-white text-slate-700 border border-purple-100/80 shadow-2xs hover:bg-[#5b46f6] hover:text-white hover:border-[#5b46f6] hover:scale-110 active:scale-95 transition-all duration-300 group"
               title="View Cart"
             >
               <ShoppingBag className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-110" />

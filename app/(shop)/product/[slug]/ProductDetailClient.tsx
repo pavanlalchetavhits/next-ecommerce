@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import ProductCard from '@/components/user/ProductCard';
 
+import { useCartStore } from '@/app/store/cartstore';
+
 interface ProductImage {
   id?: number;
   image_url: string;
@@ -184,8 +186,19 @@ export default function ProductDetailClient({
     ? product.short_description.replace(/<[^>]*>/g, '').trim()
     : '';
 
+  const addItem = useCartStore((state) => state.addItem);
+
   const handleAddToCart = () => {
     setAddedToCart(true);
+    addItem({
+      productId: product.id,
+      name: product.name,
+      sku: product?.sku || '',
+      image: selectedImage || images[0]?.image_url || '/hero-img.png',
+      price: Number(product.price),
+      quantity: quantity,
+      stock: 99,
+    });
     setTimeout(() => setAddedToCart(false), 2500);
   };
 
