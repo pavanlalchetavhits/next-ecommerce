@@ -6,6 +6,9 @@ export interface ProductFilters {
     category_id?: number | string;
     sort?: string;
     featured?: boolean;
+    page?: number;
+    limit?: number;
+    paginate?: boolean;
 }
 
 export async function getProducts(filters: ProductFilters = {}) {
@@ -39,6 +42,24 @@ export async function getProducts(filters: ProductFilters = {}) {
     } else if (filters.sort === 'name_desc') {
         orderBySql = 'ORDER BY p.name DESC';
     }
+
+    const shouldPaginate = Boolean(filters.page || filters.limit || filters.paginate);
+    let total = 0;
+
+    if (shouldPaginate) {
+        const [countRows]: any = await db.query(
+            `SELECT COUNT(*) as total FROM products p LEFT JOIN categories c ON p.category_id = c.id ${whereSql}`,
+            queryParams
+        );
+        total = countRows[0]?.total || 0;
+    }
+
+    const page = Math.max(1, Number(filters.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(filters.limit) || 12));
+    const offset = (page - 1) * limit;
+
+    const limitSql = shouldPaginate ? `LIMIT ? OFFSET ?` : '';
+    const finalParams = shouldPaginate ? [...queryParams, limit, offset] : queryParams;
 
     const [rows] = await db.query(`
         select
@@ -74,9 +95,22 @@ export async function getProducts(filters: ProductFilters = {}) {
             ON p.category_id = c.id
         ${whereSql}
         ${orderBySql}
-        `, queryParams);
+        ${limitSql}
+        `, finalParams);
 
-    return rows;
+    if (shouldPaginate) {
+        return {
+            products: rows as any[],
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit) || 1,
+            },
+        };
+    }
+
+    return rows as any[];
 }
 
 export async function getProductById(id:number)
