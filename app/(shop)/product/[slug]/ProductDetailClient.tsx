@@ -188,7 +188,7 @@ export default function ProductDetailClient({
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-12">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
       {/* Breadcrumb Navigation */}
       <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500 overflow-x-auto py-1">
         <Link href="/" className="hover:text-[#5b46f6] transition-colors shrink-0">
@@ -214,11 +214,11 @@ export default function ProductDetailClient({
       </nav>
 
       {/* Main Product Showcase Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
         {/* Left Column: Gallery */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="lg:col-span-6 space-y-3">
           {/* Active Primary View Box */}
-          <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-purple-100 bg-white p-8 shadow-sm flex items-center justify-center group">
+          <div className="relative aspect-square w-full max-w-lg mx-auto overflow-hidden rounded-2xl border border-purple-100 bg-white p-5 shadow-xs flex items-center justify-center group">
             <img
               src={selectedImage}
               alt={product.name}
@@ -227,7 +227,7 @@ export default function ProductDetailClient({
 
             {/* Discount Badge */}
             {isDiscounted && (
-              <span className="absolute top-4 left-4 z-10 rounded-full bg-red-500 px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-md">
+              <span className="absolute top-3 left-3 z-10 rounded-full bg-red-500 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-xs">
                 -{discountPercentage}% OFF
               </span>
             )}
@@ -236,28 +236,28 @@ export default function ProductDetailClient({
             <button
               type="button"
               onClick={() => setIsWishlisted(!isWishlisted)}
-              className={`absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-all active:scale-95 ${
+              className={`absolute top-3 right-3 z-10 flex h-8.5 w-8.5 items-center justify-center rounded-full border shadow-xs transition-all active:scale-95 ${
                 isWishlisted
                   ? 'bg-red-50 border-red-200 text-red-500'
                   : 'bg-white/90 border-slate-100 text-slate-400 hover:text-red-500 hover:bg-white'
               }`}
               title="Add to Wishlist"
             >
-              <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-red-500' : ''}`} />
+              <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500' : ''}`} />
             </button>
           </div>
 
           {/* Thumbnails Row */}
           {images.length > 1 && (
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+            <div className="flex items-center justify-center gap-2.5 overflow-x-auto pb-1">
               {images.map((img, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setSelectedImage(img.image_url)}
-                  className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 bg-white p-2 transition-all ${
+                  className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 bg-white p-1.5 transition-all ${
                     selectedImage === img.image_url
-                      ? 'border-[#5b46f6] ring-2 ring-indigo-500/20 shadow-md'
+                      ? 'border-[#5b46f6] ring-2 ring-indigo-500/20 shadow-xs'
                       : 'border-purple-100 hover:border-purple-300'
                   }`}
                 >
@@ -273,32 +273,32 @@ export default function ProductDetailClient({
         </div>
 
         {/* Right Column: Product Info & Purchase Controls */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-6 space-y-4">
           {/* Header Info */}
           <div>
             {product.category_name && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3.5 py-1 text-xs font-bold text-[#5b46f6] mb-3">
-                <Sparkles className="h-3.5 w-3.5 text-[#5b46f6]" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-purple-100/80 px-2.5 py-0.5 text-[11px] font-bold text-[#5b46f6] mb-2">
+                <Sparkles className="h-3 w-3 text-[#5b46f6]" />
                 {product.category_name}
               </span>
             )}
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 font-display tracking-tight leading-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 font-display tracking-tight leading-snug">
               {product.name}
             </h1>
 
             {/* SKU & Ratings */}
-            <div className="mt-3 flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1 text-amber-400">
+            <div className="mt-2 flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-0.5 text-amber-400">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                 ))}
-                <span className="ml-1 font-bold text-slate-900">5.0</span>
-                <span className="text-slate-400 font-normal">(24 reviews)</span>
+                <span className="ml-1 font-bold text-slate-900 text-xs">5.0</span>
+                <span className="text-slate-400 font-normal text-xs">(24 reviews)</span>
               </div>
 
               {product.sku && (
-                <span className="text-slate-400 font-mono border-l border-slate-200 pl-4">
+                <span className="text-slate-400 font-mono border-l border-slate-200 pl-3 text-[11px]">
                   SKU: <strong className="text-slate-700 font-semibold">{product.sku}</strong>
                 </span>
               )}
@@ -306,81 +306,81 @@ export default function ProductDetailClient({
           </div>
 
           {/* Pricing Row */}
-          <div className="rounded-2xl border border-purple-100/80 bg-white p-5 shadow-xs flex items-baseline justify-between">
+          <div className="rounded-xl border border-purple-100/80 bg-white p-4 shadow-xs flex items-baseline justify-between">
             <div>
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-extrabold text-slate-900">
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-2xl font-extrabold text-slate-900">
                   ₹{Number(product.price).toLocaleString('en-IN')}
                 </span>
                 {isDiscounted && (
-                  <span className="text-base text-slate-400 line-through font-medium">
+                  <span className="text-xs text-slate-400 line-through font-medium">
                     ₹{Number(product.compare_at_price).toLocaleString('en-IN')}
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-xs font-medium text-emerald-600 flex items-center gap-1">
-                <Check className="h-3.5 w-3.5" /> Inclusive of all taxes & instant delivery calculation
+              <p className="mt-0.5 text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+                <Check className="h-3 w-3" /> Inclusive of all taxes & instant delivery calculation
               </p>
             </div>
 
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
               In Stock
             </span>
           </div>
 
           {/* Short Description */}
           {product.short_description && (
-            <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line break-words space-y-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:font-bold">
+            <div className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line break-words space-y-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:mb-0.5 [&_p]:mb-1.5 [&_strong]:font-semibold">
               <div dangerouslySetInnerHTML={{ __html: product.short_description }} />
             </div>
           )}
 
           {/* Quantity Selector & Action Buttons */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-4">
-              <label className="text-xs font-bold text-slate-900 uppercase">
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center gap-3">
+              <label className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
                 Quantity:
               </label>
-              <div className="flex items-center rounded-xl border border-purple-200 bg-white shadow-xs">
+              <div className="flex items-center rounded-lg border border-purple-200 bg-white shadow-xs">
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-10 w-10 items-center justify-center text-slate-600 hover:bg-purple-50 transition-colors rounded-l-xl"
+                  className="flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-purple-50 transition-colors rounded-l-lg"
                 >
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-3.5 w-3.5" />
                 </button>
-                <span className="w-12 text-center text-sm font-extrabold text-slate-900 font-mono">
+                <span className="w-10 text-center text-xs font-bold text-slate-900 font-mono">
                   {quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="flex h-10 w-10 items-center justify-center text-slate-600 hover:bg-purple-50 transition-colors rounded-r-xl"
+                  className="flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-purple-50 transition-colors rounded-r-lg"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {/* Add to Cart Button */}
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className={`flex items-center justify-center gap-2.5 rounded-2xl px-6 py-4 text-sm font-extrabold transition-all duration-300 shadow-md ${
+                className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs sm:text-sm font-bold transition-all duration-300 shadow-xs ${
                   addedToCart
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-[#5b46f6] text-white hover:bg-[#4338ca] hover:shadow-indigo-500/25 active:scale-95'
+                    : 'bg-[#5b46f6] text-white hover:bg-[#4338ca] hover:shadow-indigo-500/20 active:scale-95'
                 }`}
               >
                 {addedToCart ? (
                   <>
-                    <Check className="h-5 w-5" />
+                    <Check className="h-4 w-4" />
                     <span>Added to Cart!</span>
                   </>
                 ) : (
                   <>
-                    <ShoppingBag className="h-5 w-5" />
+                    <ShoppingBag className="h-4 w-4" />
                     <span>Add to Cart</span>
                   </>
                 )}
@@ -389,45 +389,45 @@ export default function ProductDetailClient({
               {/* Buy Now Button */}
               <Link
                 href="/checkout"
-                className="flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-4 text-sm font-extrabold text-white shadow-md hover:bg-slate-800 active:scale-95 transition-all"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-xs hover:bg-slate-800 active:scale-95 transition-all"
               >
                 <span>Buy Now</span>
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>
 
           {/* Trust Guarantees Grid */}
-          <div className="grid grid-cols-2 gap-3 pt-4 border-t border-purple-100/80">
-            <div className="flex items-center gap-2.5 rounded-xl bg-white p-3 border border-purple-100/60 shadow-xs">
-              <Truck className="h-5 w-5 text-[#5b46f6] shrink-0" />
+          <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-purple-100/80">
+            <div className="flex items-center gap-2 rounded-lg bg-white p-2.5 border border-purple-100/60 shadow-xs">
+              <Truck className="h-4 w-4 text-[#5b46f6] shrink-0" />
               <div>
-                <h4 className="text-xs font-bold text-slate-900">Express Delivery</h4>
-                <p className="text-[10px] text-slate-500">Fast 2-4 business days</p>
+                <h4 className="text-[11px] font-bold text-slate-900">Express Delivery</h4>
+                <p className="text-[9px] text-slate-500">Fast 2-4 business days</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 rounded-xl bg-white p-3 border border-purple-100/60 shadow-xs">
-              <RotateCcw className="h-5 w-5 text-[#5b46f6] shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg bg-white p-2.5 border border-purple-100/60 shadow-xs">
+              <RotateCcw className="h-4 w-4 text-[#5b46f6] shrink-0" />
               <div>
-                <h4 className="text-xs font-bold text-slate-900">30-Day Guarantee</h4>
-                <p className="text-[10px] text-slate-500">Hassle-free returns</p>
+                <h4 className="text-[11px] font-bold text-slate-900">30-Day Guarantee</h4>
+                <p className="text-[9px] text-slate-500">Hassle-free returns</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 rounded-xl bg-white p-3 border border-purple-100/60 shadow-xs">
-              <ShieldCheck className="h-5 w-5 text-[#5b46f6] shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg bg-white p-2.5 border border-purple-100/60 shadow-xs">
+              <ShieldCheck className="h-4 w-4 text-[#5b46f6] shrink-0" />
               <div>
-                <h4 className="text-xs font-bold text-slate-900">100% Authentic</h4>
-                <p className="text-[10px] text-slate-500">Certified craftsmanship</p>
+                <h4 className="text-[11px] font-bold text-slate-900">100% Authentic</h4>
+                <p className="text-[9px] text-slate-500">Certified craftsmanship</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 rounded-xl bg-white p-3 border border-purple-100/60 shadow-xs">
-              <Award className="h-5 w-5 text-[#5b46f6] shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg bg-white p-2.5 border border-purple-100/60 shadow-xs">
+              <Award className="h-4 w-4 text-[#5b46f6] shrink-0" />
               <div>
-                <h4 className="text-xs font-bold text-slate-900">2-Year Warranty</h4>
-                <p className="text-[10px] text-slate-500">Full manufacturer coverage</p>
+                <h4 className="text-[11px] font-bold text-slate-900">2-Year Warranty</h4>
+                <p className="text-[9px] text-slate-500">Full manufacturer coverage</p>
               </div>
             </div>
           </div>
