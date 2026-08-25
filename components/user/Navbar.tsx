@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Search,
   ShoppingBag,
   User,
   Menu,
@@ -23,7 +22,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Cart items count simulation (can be bound to zustand cart store)
   const cartCount = 2;
@@ -37,12 +35,12 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: 'Home', href: '/' },
-    { label: 'Shop All', href: '/products' },
-    { label: 'Categories', href: '/categories' },
-    { label: 'Deals', href: '/products?featured=true' },
-    { label: 'About', href: '/about' },
-    { label: 'Contact', href: '/contact' },
+    { label: 'Home', href: '/', icon: Compass },
+    { label: 'Shop All', href: '/products', icon: ShoppingBag },
+    { label: 'Categories', href: '/categories', icon: Tag },
+    { label: 'Deals', href: '/deals', icon: Sparkles },
+    { label: 'About', href: '/about', icon: HelpCircle },
+    { label: 'Contact', href: '/contact', icon: PhoneCall },
   ];
 
   return (
@@ -65,7 +63,7 @@ export default function Navbar() {
           </div>
 
           <div className="hidden sm:flex items-center gap-5 text-slate-300">
-            <Link href="/contact-us" className="hover:text-white transition-colors flex items-center gap-1">
+            <Link href="/contact" className="hover:text-white transition-colors flex items-center gap-1">
               <PhoneCall className="w-3 h-3 text-indigo-400" />
               <span>Support</span>
             </Link>
@@ -108,48 +106,27 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-1 bg-slate-50 dark:bg-slate-800/60 p-1.5 rounded-full border border-slate-200/80 dark:border-slate-800">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
+              const IconComp = link.icon;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 ${
                     isActive
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800'
                   }`}
                 >
-                  {link.label}
+                  <IconComp className="w-3.5 h-3.5" />
+                  <span>{link.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Search Box & Quick Actions */}
+          {/* Quick Actions */}
           <div className="flex items-center gap-3 sm:gap-4">
             
-            {/* Search Input (Desktop) */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (searchQuery.trim()) {
-                  window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
-                }
-              }}
-              className="hidden md:flex items-center relative w-48 lg:w-64"
-            >
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
-              />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">
-                ⌘K
-              </span>
-            </form>
-
             {/* Wishlist Link */}
             <Link
               href="/wishlist"
@@ -201,44 +178,26 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 animate-in slide-in-from-top duration-300">
           <div className="p-4 space-y-4">
-            
-            {/* Mobile Search */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (searchQuery.trim()) {
-                  setMobileMenuOpen(false);
-                  window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
-                }
-              }}
-              className="relative"
-            >
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search catalog..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
-              />
-            </form>
-
             {/* Mobile Nav Links */}
             <nav className="flex flex-col space-y-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
-                    pathname === link.href
-                      ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const IconComp = link.icon;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`inline-flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                      pathname === link.href
+                        ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <IconComp className="w-4 h-4" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
 
           </div>

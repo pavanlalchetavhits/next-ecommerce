@@ -630,6 +630,32 @@ CREATE TABLE settings (
 
 
 -- ============================================================
+-- 18. CONTACT MESSAGES
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NULL,
+
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+
+    status ENUM('unread', 'read', 'replied', 'archived')
+        NOT NULL DEFAULT 'unread',
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_contact_messages_status (status),
+    INDEX idx_contact_messages_created_at (created_at)
+) ENGINE=InnoDB;
+
+
+-- ============================================================
 -- DONE
 -- ============================================================
 
