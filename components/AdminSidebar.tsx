@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Ticket,
   MessageSquare,
+  Mail,
   Settings,
   Sparkles,
   ShieldCheck,
@@ -58,6 +59,11 @@ const menuItems = [
     label: 'Reviews',
     href: '/admin/reviews',
     icon: MessageSquare,
+  },
+  {
+    label: 'Messages',
+    href: '/admin/messages',
+    icon: Mail,
   },
   {
     label: 'Settings',

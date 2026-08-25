@@ -29,6 +29,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "NexCart | Next-Gen E-Commerce Store",
   description: "Experience fast checkout, premium products, and real-time order tracking on NexCart.",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

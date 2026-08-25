@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import axios from "axios";
 import { Mail, Phone, MapPin, Clock, Send, Sparkles, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
@@ -40,20 +41,23 @@ export default function Contact() {
 
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const res = await axios.post('/api/contact', form);
 
-      setSuccess("Thank you! Your message has been sent successfully. Our team will get back to you shortly.");
-
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: "",
-      });
-    } catch (err) {
+      if (res.data?.success) {
+        setSuccess(res.data.message || "Thank you! Your message has been sent successfully.");
+        setForm({
+          name: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: "",
+        });
+      } else {
+        setError(res.data?.message || "Failed to send message.");
+      }
+    } catch (err: any) {
       console.error(err);
-      setError("Something went wrong. Please try again later.");
+      setError(err?.response?.data?.message || "Something went wrong. Please try again later.");
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
+  FileText,
+  Sliders,
   Star,
   Heart,
   ShoppingBag,
@@ -439,25 +441,29 @@ export default function ProductDetailClient({
         {/* Tab Headers */}
         <div className="flex items-center gap-2 border-b border-purple-100 pb-4 overflow-x-auto">
           {[
-            { id: 'description', label: 'Full Description' },
-            { id: 'specs', label: 'Specifications' },
-            { id: 'care', label: 'Care & Maintenance' },
-            { id: 'shipping', label: 'Shipping & Returns' },
-            { id: 'faq', label: 'FAQs' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-[#5b46f6] text-white shadow-md shadow-indigo-500/20'
-                  : 'text-slate-600 hover:bg-purple-50 hover:text-[#5b46f6]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+            { id: 'description', label: 'Full Description', icon: FileText },
+            { id: 'specs', label: 'Specifications', icon: Sliders },
+            { id: 'care', label: 'Care & Maintenance', icon: Sparkles },
+            { id: 'shipping', label: 'Shipping & Returns', icon: Truck },
+            { id: 'faq', label: 'FAQs', icon: HelpCircle },
+          ].map((tab) => {
+            const IconComp = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'bg-[#5b46f6] text-white shadow-md shadow-indigo-500/20'
+                    : 'text-slate-600 hover:bg-purple-50 hover:text-[#5b46f6]'
+                }`}
+              >
+                <IconComp className="h-4 w-4 shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab Contents */}

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Edit2,
   Trash2,
+  Eye,
   X,
   Loader2,
   AlertCircle,
@@ -49,6 +50,7 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<CouponItem | null>(null);
+  const [viewingCoupon, setViewingCoupon] = useState<CouponItem | null>(null);
   const [deletingCoupon, setDeletingCoupon] = useState<CouponItem | null>(null);
 
   // Form State
@@ -440,9 +442,17 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                     <td className="py-4 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setViewingCoupon(c)}
+                          title="View Details"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E9EDF7] bg-white text-emerald-600 transition-all hover:border-emerald-400 hover:bg-emerald-50 shadow-sm cursor-pointer"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+
+                        <button
                           onClick={() => openEditModal(c)}
                           title="Edit Coupon"
-                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E9EDF7] bg-white text-[#6366F1] transition-all hover:border-[#6366F1] hover:bg-indigo-50 shadow-sm"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E9EDF7] bg-white text-[#6366F1] transition-all hover:border-[#6366F1] hover:bg-indigo-50 shadow-sm cursor-pointer"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
@@ -450,7 +460,7 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                         <button
                           onClick={() => setDeletingCoupon(c)}
                           title="Delete Coupon"
-                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-200 bg-red-50/60 text-red-600 transition-all hover:bg-red-600 hover:text-white shadow-sm"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-200 bg-red-50/60 text-red-600 transition-all hover:bg-red-600 hover:text-white shadow-sm cursor-pointer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -463,6 +473,131 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
           </div>
         )}
       </div>
+
+      {/* --- VIEW COUPON DETAILS MODAL --- */}
+      {viewingCoupon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-[#E9EDF7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-6">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-[#E9EDF7] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-[#6366F1]">
+                  <Ticket className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-extrabold text-[#0F172A] text-base">
+                      {viewingCoupon.code}
+                    </span>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        viewingCoupon.status === 'active'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}
+                    >
+                      {viewingCoupon.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#707EAE]">Promotional Coupon Details</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setViewingCoupon(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#94A3B8] hover:bg-[#F8FAFC] hover:text-[#0F172A] cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-4 rounded-xl bg-[#F8FAFC] p-4 border border-[#E9EDF7] text-xs">
+              <div className="col-span-2">
+                <span className="font-bold text-[#707EAE] uppercase text-[10px]">Description</span>
+                <p className="text-xs font-semibold text-[#0F172A] mt-0.5">
+                  {viewingCoupon.description || 'No description provided.'}
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-[#707EAE] uppercase text-[10px]">Discount Value</span>
+                <p className="text-sm font-extrabold text-emerald-600 mt-0.5">
+                  {viewingCoupon.discount_type === 'percentage'
+                    ? `${viewingCoupon.discount_value}% OFF`
+                    : `$${Number(viewingCoupon.discount_value).toFixed(2)} OFF`}
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-[#707EAE] uppercase text-[10px]">Min Order Amount</span>
+                <p className="text-xs font-bold text-[#0F172A] mt-0.5">
+                  ${Number(viewingCoupon.minimum_order_amount || 0).toFixed(2)}
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-[#707EAE] uppercase text-[10px]">Max Savings Cap</span>
+                <p className="text-xs font-bold text-[#0F172A] mt-0.5">
+                  {viewingCoupon.maximum_discount_amount
+                    ? `$${Number(viewingCoupon.maximum_discount_amount).toFixed(2)}`
+                    : 'No Maximum Cap'}
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-[#707EAE] uppercase text-[10px]">Usage Statistics</span>
+                <p className="text-xs font-bold text-[#0F172A] mt-0.5">
+                  {viewingCoupon.used_count || 0}{' '}
+                  <span className="text-[#94A3B8] font-normal">
+                    {viewingCoupon.usage_limit ? `/ ${viewingCoupon.usage_limit} limit` : '(Unlimited)'}
+                  </span>
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-[#707EAE] uppercase text-[10px]">Start Date</span>
+                <p className="text-xs font-medium text-[#0F172A] mt-0.5">
+                  {new Date(viewingCoupon.starts_at).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-[#707EAE] uppercase text-[10px]">Expiry Date</span>
+                <p className="text-xs font-medium text-[#0F172A] mt-0.5">
+                  {viewingCoupon.expires_at
+                    ? new Date(viewingCoupon.expires_at).toLocaleDateString()
+                    : 'Never Expires'}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-between pt-2 border-t border-[#E9EDF7]">
+              <button
+                type="button"
+                onClick={() => {
+                  const couponToEdit = viewingCoupon;
+                  setViewingCoupon(null);
+                  openEditModal(couponToEdit);
+                }}
+                className="flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-2 text-xs font-bold text-[#6366F1] hover:bg-indigo-100 transition-colors cursor-pointer"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+                <span>Edit Coupon</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewingCoupon(null)}
+                className="rounded-xl bg-[#6366F1] px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- CREATE / EDIT COUPON MODAL --- */}
       {isModalOpen && (
