@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { auth } from '@/lib/auth';
+import { getUserCouponUsageCount } from '@/services/coupon.service';
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    const userId = (session?.user as any)?.id ? Number((session?.user as any)?.id) : null;
+
     const body = await request.json();
     const { code, subtotal = 0 } = body;
 
@@ -26,12 +31,14 @@ export async function POST(request: Request) {
         minimum_order_amount,
         maximum_discount_amount,
         usage_limit,
+        per_user_limit,
+        per_user_limit_period,
         used_count,
         starts_at,
         expires_at,
         status
       FROM coupons
-      WHERE code = ?
+      WHERE UPPER(code) = ?
       LIMIT 1
       `,
       [cleanCode]
@@ -75,7 +82,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: `Minimum order amount of $${minAmount.toFixed(2)} required for this coupon`,
+          message: `Minimum order amount of ₹${minAmount.toLocaleString('en-IN')} required for this coupon`,
         },
         { status: 400 }
       );
@@ -83,12 +90,34 @@ export async function POST(request: Request) {
 
     if (
       coupon.usage_limit !== null &&
-      coupon.used_count >= coupon.usage_limit
+      Number(coupon.usage_limit) > 0 &&
+      Number(coupon.used_count) >= Number(coupon.usage_limit)
     ) {
       return NextResponse.json(
-        { success: false, message: 'This promo code usage limit has been reached' },
+        { success: false, message: 'This promo code total usage limit has been reached' },
         { status: 400 }
       );
+    }
+
+    // Check per-user limit
+    const perUserLimit = coupon.per_user_limit ? Number(coupon.per_user_limit) : 0;
+    if (userId && perUserLimit > 0) {
+      const period = coupon.per_user_limit_period || 'lifetime';
+      const userUsage = await getUserCouponUsageCount(userId, coupon.id, period);
+      if (userUsage >= perUserLimit) {
+        const periodLabel =
+          period === 'monthly' || period === 'once_per_month' || period === 'twice_per_month'
+            ? 'this month'
+            : 'for your account';
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: `You have reached the maximum usage limit for coupon ${cleanCode} (${perUserLimit} time${perUserLimit > 1 ? 's' : ''} ${periodLabel}).`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     let discount = 0;
@@ -114,7 +143,10 @@ export async function POST(request: Request) {
         discount_type: coupon.discount_type,
         discount_value: discountVal,
         discount_amount: discount,
+        discount: discount,
         description: coupon.description,
+        per_user_limit: perUserLimit,
+        per_user_limit_period: coupon.per_user_limit_period || 'lifetime',
       },
     });
   } catch (error) {

@@ -67,6 +67,8 @@ export async function PUT(request: Request, { params }: Params) {
       minimum_order_amount,
       maximum_discount_amount,
       usage_limit,
+      per_user_limit,
+      per_user_limit_period,
       starts_at,
       expires_at,
       expries_at,
@@ -124,6 +126,11 @@ export async function PUT(request: Request, { params }: Params) {
         usage_limit !== undefined && usage_limit !== null && usage_limit !== ''
           ? Number(usage_limit)
           : null,
+      per_user_limit:
+        per_user_limit !== undefined && per_user_limit !== null && per_user_limit !== ''
+          ? Number(per_user_limit)
+          : 1,
+      per_user_limit_period: per_user_limit_period || 'lifetime',
       starts_at,
       expires_at: finalExpiryDate,
       status,

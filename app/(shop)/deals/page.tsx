@@ -48,6 +48,9 @@ type Coupon = {
   discount_value: number;
   minimum_order_amount?: number;
   maximum_discount_amount?: number | null;
+  per_user_limit?: number | null;
+  per_user_limit_period?: string | null;
+  user_used_count?: number;
   starts_at: string;
   expires_at?: string | null;
   status?: string;
@@ -308,43 +311,57 @@ export default function DealsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {coupons.map((coupon) => (
-                <div
-                  key={coupon.id}
-                  className="rounded-2xl border border-purple-100 bg-white p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-extrabold text-[#5b46f6] border border-purple-100">
-                      {coupon.discount_type === 'percentage'
-                        ? `${coupon.discount_value}% OFF`
-                        : `₹${coupon.discount_value} OFF`}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setTcModalCoupon(coupon)}
-                      className="text-[11px] font-bold text-[#5b46f6] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <FileText className="h-3 w-3" />
-                      <span>Terms & Conditions</span>
-                    </button>
-                  </div>
+              {coupons.map((coupon) => {
+                const used = coupon.user_used_count || 0;
+                const limit = coupon.per_user_limit || 1;
+                const isMonthly = coupon.per_user_limit_period === 'monthly';
 
-                  <p className="text-xs text-slate-600 font-normal leading-relaxed">
-                    {coupon.description || 'Valid on all eligible catalog items at checkout.'}
-                  </p>
+                return (
+                  <div
+                    key={coupon.id}
+                    className="rounded-2xl border border-purple-100 bg-white p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-extrabold text-[#5b46f6] border border-purple-100">
+                        {coupon.discount_type === 'percentage'
+                          ? `${coupon.discount_value}% OFF`
+                          : `₹${coupon.discount_value} OFF`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setTcModalCoupon(coupon)}
+                        className="text-[11px] font-bold text-[#5b46f6] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <FileText className="h-3 w-3" />
+                        <span>Terms & Conditions</span>
+                      </button>
+                    </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-purple-50">
-                    <span className="font-mono text-xs font-bold text-slate-900">{coupon.code}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyCode(coupon.code)}
-                      className="text-xs font-bold text-[#5b46f6] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      {copiedCode === coupon.code ? 'Copied!' : 'Copy Code'}
-                    </button>
+                    <p className="text-xs text-slate-600 font-normal leading-relaxed">
+                      {coupon.description || 'Valid on all eligible catalog items at checkout.'}
+                    </p>
+
+                    {/* User Usage Badge */}
+                    <div className="flex items-center justify-between rounded-xl bg-purple-50/60 px-3 py-1.5 border border-purple-100 text-[11px]">
+                      <span className="font-semibold text-slate-600">Your Usage:</span>
+                      <span className={`font-extrabold ${used >= limit ? 'text-red-600' : 'text-emerald-600'}`}>
+                        {used} / {limit} used {isMonthly ? '(this month)' : '(lifetime)'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-purple-50">
+                      <span className="font-mono text-xs font-bold text-slate-900">{coupon.code}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCode(coupon.code)}
+                        className="text-xs font-bold text-[#5b46f6] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedCode === coupon.code ? 'Copied!' : 'Copy Code'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}

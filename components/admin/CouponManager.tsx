@@ -31,6 +31,8 @@ export interface CouponItem {
   minimum_order_amount: number;
   maximum_discount_amount?: number | null;
   usage_limit?: number | null;
+  per_user_limit?: number | null;
+  per_user_limit_period?: string | null;
   used_count: number;
   starts_at: string;
   expires_at?: string | null;
@@ -62,6 +64,8 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
     minimum_order_amount: '0',
     maximum_discount_amount: '',
     usage_limit: '',
+    per_user_limit: '1',
+    per_user_limit_period: 'monthly' as 'lifetime' | 'monthly' | 'once_per_month' | 'twice_per_month',
     starts_at: new Date().toISOString().split('T')[0],
     expires_at: '',
     status: 'active' as 'active' | 'inactive',
@@ -100,6 +104,8 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
       minimum_order_amount: '0',
       maximum_discount_amount: '',
       usage_limit: '',
+      per_user_limit: '1',
+      per_user_limit_period: 'monthly',
       starts_at: new Date().toISOString().split('T')[0],
       expires_at: '',
       status: 'active',
@@ -121,6 +127,8 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
         ? String(coupon.maximum_discount_amount)
         : '',
       usage_limit: coupon.usage_limit ? String(coupon.usage_limit) : '',
+      per_user_limit: coupon.per_user_limit !== undefined && coupon.per_user_limit !== null ? String(coupon.per_user_limit) : '1',
+      per_user_limit_period: (coupon.per_user_limit_period as any) || 'monthly',
       starts_at: coupon.starts_at ? coupon.starts_at.split('T')[0] : '',
       expires_at: coupon.expires_at ? coupon.expires_at.split('T')[0] : '',
       status: coupon.status,
@@ -145,6 +153,8 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
         ? parseFloat(formData.maximum_discount_amount)
         : undefined,
       usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : undefined,
+      per_user_limit: formData.per_user_limit ? parseInt(formData.per_user_limit) : 1,
+      per_user_limit_period: formData.per_user_limit_period,
       starts_at: formData.starts_at,
       expires_at: formData.expires_at || undefined,
       status: formData.status,
@@ -755,16 +765,57 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                 </div>
               </div>
 
-              {/* Usage Limit & Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Per-User Usage Limit & Reset Frequency */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-50/50 p-3 rounded-xl border border-purple-100">
                 <div>
-                  <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                    Usage Limit (Count)
+                  <label className="block text-xs font-bold text-[#5b46f6] uppercase mb-1">
+                    Limit Per Customer *
                   </label>
                   <input
                     type="number"
                     min="1"
-                    placeholder="Optional limit"
+                    required
+                    placeholder="e.g. 1"
+                    value={formData.per_user_limit}
+                    onChange={(e) =>
+                      setFormData({ ...formData, per_user_limit: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-purple-200 bg-white p-2.5 text-xs font-bold text-[#0F172A] outline-none focus:border-[#5b46f6]"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">Max redemptions allowed per user</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#5b46f6] uppercase mb-1">
+                    Reset Frequency *
+                  </label>
+                  <MuiSelect
+                    value={formData.per_user_limit_period}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        per_user_limit_period: e.target.value as any,
+                      })
+                    }
+                    options={[
+                      { value: 'monthly', label: 'Per Month (Resets Monthly)' },
+                      { value: 'lifetime', label: 'Lifetime (One-Time Per User)' },
+                    ]}
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">When user limit resets</p>
+                </div>
+              </div>
+
+              {/* Usage Limit & Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
+                    Total Global Limit (All Users)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Optional total limit"
                     value={formData.usage_limit}
                     onChange={(e) =>
                       setFormData({ ...formData, usage_limit: e.target.value })

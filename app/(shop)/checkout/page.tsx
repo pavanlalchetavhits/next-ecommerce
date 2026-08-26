@@ -16,12 +16,16 @@ import {
   Tag,
   ArrowLeft,
   Sparkles,
+  Pencil,
+  Trash2,
   Home,
   Briefcase,
-  User,
-  Phone,
   Building,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
+
+import axios from "axios";
 
 type Address = {
   id: number;
@@ -49,8 +53,10 @@ export default function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
 
-  // New address form inline toggle & state
+  // Address form inline toggle & state (Create / Edit)
   const [showAddAddress, setShowAddAddress] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
+  const [deletingAddressId, setDeletingAddressId] = useState<number | null>(null);
   const [newAddress, setNewAddress] = useState({
     full_name: "",
     phone: "",
@@ -66,8 +72,10 @@ export default function CheckoutPage() {
 
   // Coupon state
   const [couponCode, setCouponCode] = useState("");
+  const [appliedCouponCode, setAppliedCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState("");
+  const [couponMessageType, setCouponMessageType] = useState<"success" | "error" | "">("");
 
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -110,11 +118,92 @@ export default function CheckoutPage() {
   }, []);
 
   /*
-   * Save inline address
+   * Reset address form state
    */
-  async function handleSaveNewAddress(e: React.FormEvent) {
+  function resetAddressForm() {
+    setShowAddAddress(false);
+    setEditingAddressId(null);
+    setNewAddress({
+      full_name: "",
+      phone: "",
+      address_line1: "",
+      address_line2: "",
+      city: "",
+      state: "",
+      postal_code: "",
+      country: "India",
+      address_type: "home",
+    });
+  }
+
+  /*
+   * Start editing an address
+   */
+  function handleEditAddress(address: Address) {
+    setEditingAddressId(address.id);
+    setNewAddress({
+      full_name: address.full_name,
+      phone: address.phone,
+      address_line1: address.address_line1,
+      address_line2: address.address_line2 || "",
+      city: address.city,
+      state: address.state,
+      postal_code: address.postal_code,
+      country: address.country || "India",
+      address_type: address.address_type || "home",
+    });
+    setShowAddAddress(true);
+  }
+
+  /*
+   * Delete an address
+   */
+  async function handleDeleteAddress(addressId: number) {
+    if (!confirm("Are you sure you want to delete this address?")) return;
+
+    try {
+      setDeletingAddressId(addressId);
+      setError("");
+
+      const response = await fetch(`/api/addresses/${addressId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to delete address");
+      }
+
+      const updatedList = addresses.filter((addr) => addr.id !== addressId);
+      setAddresses(updatedList);
+
+      if (selectedAddress === addressId) {
+        if (updatedList.length > 0) {
+          setSelectedAddress(updatedList[0].id);
+        } else {
+          setSelectedAddress(null);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to delete address");
+    } finally {
+      setDeletingAddressId(null);
+    }
+  }
+
+  /*
+   * Save or Update inline address
+   */
+  async function handleSaveAddress(e: React.FormEvent) {
     e.preventDefault();
-    if (!newAddress.full_name || !newAddress.phone || !newAddress.address_line1 || !newAddress.city || !newAddress.state || !newAddress.postal_code) {
+    if (
+      !newAddress.full_name ||
+      !newAddress.phone ||
+      !newAddress.address_line1 ||
+      !newAddress.city ||
+      !newAddress.state ||
+      !newAddress.postal_code
+    ) {
       setError("Please fill in all required address fields.");
       return;
     }
@@ -123,10 +212,17 @@ export default function CheckoutPage() {
       setSavingAddress(true);
       setError("");
 
-      const response = await fetch("/api/addresses", {
-        method: "POST",
+      const isEdit = Boolean(editingAddressId);
+      const url = isEdit ? `/api/addresses/${editingAddressId}` : "/api/addresses";
+      const method = isEdit ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newAddress, is_default: addresses.length === 0 }),
+        body: JSON.stringify({
+          ...newAddress,
+          is_default: addresses.length === 0,
+        }),
       });
 
       const data = await response.json();
@@ -135,21 +231,10 @@ export default function CheckoutPage() {
       }
 
       await fetchAddresses();
-      if (data.data?.id) {
+      if (!isEdit && data.data?.id) {
         setSelectedAddress(data.data.id);
       }
-      setShowAddAddress(false);
-      setNewAddress({
-        full_name: "",
-        phone: "",
-        address_line1: "",
-        address_line2: "",
-        city: "",
-        state: "",
-        postal_code: "",
-        country: "India",
-        address_type: "home",
-      });
+      resetAddressForm();
     } catch (err: any) {
       setError(err.message || "Failed to save address");
     } finally {
@@ -161,18 +246,21 @@ export default function CheckoutPage() {
    * Validate/apply coupon
    */
   async function applyCoupon() {
-    if (!couponCode.trim()) {
+    const codeToApply = couponCode.trim();
+    if (!codeToApply) {
+      setCouponMessageType("error");
       setCouponMessage("Please enter a coupon code.");
       return;
     }
 
     try {
       setCouponMessage("");
+      setCouponMessageType("");
       const response = await fetch("/api/coupons/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code: couponCode.trim(),
+          code: codeToApply,
           subtotal,
         }),
       });
@@ -180,16 +268,53 @@ export default function CheckoutPage() {
       const data = await response.json();
       if (!response.ok || !data.success) {
         setCouponDiscount(0);
+        setAppliedCouponCode("");
+        setCouponMessageType("error");
         setCouponMessage(data.message || "Invalid coupon code.");
         return;
       }
 
-      setCouponDiscount(Number(data.data.discount || 0));
-      setCouponMessage(`🎉 Coupon applied! You saved ₹${Number(data.data.discount).toLocaleString("en-IN")}.`);
+      const discountAmt = Number(data.data.discount_amount ?? data.data.discount ?? 0);
+      setCouponDiscount(discountAmt);
+      setAppliedCouponCode(data.data.code || codeToApply.toUpperCase());
+      setCouponMessageType("success");
+      setCouponMessage(
+        `🎉 Coupon applied! You saved ₹${discountAmt.toLocaleString("en-IN")}.`
+      );
     } catch (error) {
       console.error("Coupon error:", error);
+      setCouponMessageType("error");
       setCouponMessage("Unable to validate coupon code.");
     }
+  }
+
+  /*
+   * Remove applied coupon
+   */
+  function handleRemoveCoupon() {
+    setCouponDiscount(0);
+    setAppliedCouponCode("");
+    setCouponCode("");
+    setCouponMessage("");
+    setCouponMessageType("");
+  }
+
+  /*
+   * Helper to load Cashfree JS SDK dynamically
+   */
+  function loadCashfreeSdk() {
+    return new Promise<any>((resolve, reject) => {
+      if (typeof window === "undefined") return reject(new Error("Window not defined"));
+      if ((window as any).Cashfree) {
+        resolve((window as any).Cashfree);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      script.onload = () => resolve((window as any).Cashfree);
+      script.onerror = () => reject(new Error("Failed to load Cashfree Payment SDK"));
+      document.body.appendChild(script);
+    });
   }
 
   /*
@@ -216,7 +341,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           address_id: selectedAddress,
-          coupon_code: couponDiscount > 0 ? couponCode : null,
+          coupon_code: couponDiscount > 0 ? appliedCouponCode : null,
           discount_amount: couponDiscount,
           shipping_amount: shipping,
           tax_amount: tax,
@@ -234,8 +359,48 @@ export default function CheckoutPage() {
         throw new Error(data.message || "Failed to place order");
       }
 
+      const createdOrderId = data.data?.order_id || data.data?.id || 101;
+
+      // Online Cashfree Payment Gateway Flow
+      if (paymentMethod === "online") {
+        const cfResponse = await fetch("/api/payments/cashfree/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: createdOrderId }),
+        });
+
+        const cfData = await cfResponse.json();
+        if (!cfResponse.ok || !cfData.success) {
+          throw new Error(cfData.message || "Failed to initialize Cashfree payment");
+        }
+
+        clearCart();
+
+        if (cfData.isDemo) {
+          // Simulation / Demo Mode Redirect
+          router.push(`/api/payments/cashfree/verify?order_id=${createdOrderId}&demo=true`);
+          return;
+        }
+
+        // Real Cashfree Payment SDK Execution
+        try {
+          const CashfreeSDK = await loadCashfreeSdk();
+          const cashfree = CashfreeSDK({ mode: "sandbox" });
+          cashfree.checkout({
+            paymentSessionId: cfData.paymentSessionId,
+            redirectTarget: "_self",
+          });
+          return;
+        } catch (sdkErr: any) {
+          console.error("SDK load error, redirecting to order failure:", sdkErr);
+          router.push(`/order-failed/${createdOrderId}?reason=${encodeURIComponent(sdkErr?.message || "Failed to load Cashfree Payment SDK")}`);
+          return;
+        }
+      }
+
+      // COD Flow
       clearCart();
-      router.push(`/order-success/${data.data.order_id || data.data.id || 101}`);
+      router.push(`/order-success/${createdOrderId}`);
     } catch (error: any) {
       console.error("Place order error:", error);
       setError(error.message || "Failed to place order. Please try again.");
@@ -243,7 +408,6 @@ export default function CheckoutPage() {
       setPlacingOrder(false);
     }
   }
-
   /*
    * Empty cart state
    */
@@ -272,8 +436,16 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-slate-50/50 py-8 sm:py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
         
-        {/* Page Header */}
-        <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+        {/* Page Header - Back to Cart button moved to LEFT side */}
+        <div className="border-b border-purple-100 pb-4 space-y-3">
+          <Link
+            href="/cart"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5b46f6] hover:text-[#4338ca] hover:underline transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Cart</span>
+          </Link>
+
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3 py-1 text-xs font-bold text-[#5b46f6] mb-2">
               <Sparkles className="h-3.5 w-3.5" />
@@ -283,14 +455,6 @@ export default function CheckoutPage() {
               Review & Place Order
             </h1>
           </div>
-
-          <Link
-            href="/cart"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5b46f6] hover:underline"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Cart</span>
-          </Link>
         </div>
 
         {/* Global Error Banner */}
@@ -322,7 +486,14 @@ export default function CheckoutPage() {
 
                 <button
                   type="button"
-                  onClick={() => setShowAddAddress(!showAddAddress)}
+                  onClick={() => {
+                    if (showAddAddress) {
+                      resetAddressForm();
+                    } else {
+                      resetAddressForm();
+                      setShowAddAddress(true);
+                    }
+                  }}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5b46f6] hover:bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200 transition-all cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -330,10 +501,58 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              {/* Inline Add New Address Form */}
+              {/* Inline Add / Edit Address Form */}
               {showAddAddress && (
-                <form onSubmit={handleSaveNewAddress} className="rounded-xl border border-purple-200 bg-purple-50/40 p-4 space-y-3 animate-in fade-in duration-200">
-                  <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">New Shipping Address</h3>
+                <form onSubmit={handleSaveAddress} className="rounded-xl border border-purple-200 bg-purple-50/40 p-4 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                      {editingAddressId ? "Edit Shipping Address" : "New Shipping Address"}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={resetAddressForm}
+                      className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {/* Address Type Selection */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Address Type
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[
+                        { id: "home", label: "Home", icon: Home },
+                        { id: "work", label: "Work / Office", icon: Briefcase },
+                        { id: "other", label: "Other", icon: Building },
+                      ].map((typeOption) => {
+                        const Icon = typeOption.icon;
+                        const isSelected = newAddress.address_type === typeOption.id;
+                        return (
+                          <button
+                            key={typeOption.id}
+                            type="button"
+                            onClick={() =>
+                              setNewAddress({
+                                ...newAddress,
+                                address_type: typeOption.id as "home" | "work" | "other",
+                              })
+                            }
+                            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-[#5b46f6] bg-purple-100/80 text-[#5b46f6] font-bold ring-1 ring-[#5b46f6]/30"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-purple-200"
+                            }`}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            <span>{typeOption.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input
@@ -363,6 +582,14 @@ export default function CheckoutPage() {
                     required
                   />
 
+                  <input
+                    type="text"
+                    placeholder="Landmark / Area / Suite (Optional)"
+                    value={newAddress.address_line2}
+                    onChange={(e) => setNewAddress({ ...newAddress, address_line2: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
+                  />
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <input
                       type="text"
@@ -390,14 +617,23 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={savingAddress}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#5b46f6] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#4338ca] transition-all cursor-pointer"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                    <span>{savingAddress ? "Saving..." : "Save Address"}</span>
-                  </button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={savingAddress}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#5b46f6] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#4338ca] transition-all cursor-pointer"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      <span>{savingAddress ? "Saving..." : editingAddressId ? "Update Address" : "Save Address"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetAddressForm}
+                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </form>
               )}
 
@@ -409,7 +645,10 @@ export default function CheckoutPage() {
                   <p className="text-xs text-slate-500 font-medium">No saved addresses found.</p>
                   <button
                     type="button"
-                    onClick={() => setShowAddAddress(true)}
+                    onClick={() => {
+                      resetAddressForm();
+                      setShowAddAddress(true);
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b46f6] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#4338ca] transition-all cursor-pointer"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -438,8 +677,37 @@ export default function CheckoutPage() {
                             </span>
                           </div>
 
-                          <div className={`h-4 w-4 rounded-full border flex items-center justify-center ${isSelected ? "border-[#5b46f6] bg-[#5b46f6]" : "border-slate-300"}`}>
-                            {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditAddress(address);
+                              }}
+                              className="p-1 rounded-lg text-slate-400 hover:text-[#5b46f6] hover:bg-purple-100 transition-colors cursor-pointer"
+                              title="Edit address"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteAddress(address.id);
+                              }}
+                              disabled={deletingAddressId === address.id}
+                              className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                              title="Delete address"
+                            >
+                              {deletingAddressId === address.id ? (
+                                <span className="text-[10px] text-red-500 animate-pulse">...</span>
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                            <div className={`h-4 w-4 rounded-full border flex items-center justify-center ${isSelected ? "border-[#5b46f6] bg-[#5b46f6]" : "border-slate-300"}`}>
+                              {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
+                            </div>
                           </div>
                         </div>
 
@@ -569,10 +837,25 @@ export default function CheckoutPage() {
                   Apply
                 </button>
               </div>
-              {couponMessage && <p className="text-[11px] font-semibold text-emerald-600">{couponMessage}</p>}
+              {couponMessage && (
+                <div
+                  className={`mt-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold border transition-all animate-in fade-in duration-200 ${
+                    couponMessageType === "success"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-red-50 text-red-600 border-red-200"
+                  }`}
+                >
+                  {couponMessageType === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                  )}
+                  <span className="leading-tight">{couponMessage}</span>
+                </div>
+              )}
             </div>
 
-            {/* Price Calculations */}
+            {/* Price Calculations & Coupon Info */}
             <div className="space-y-2.5 text-xs text-slate-600 pt-3 border-t border-purple-100">
               <div className="flex justify-between">
                 <span>Items Subtotal</span>
@@ -583,9 +866,22 @@ export default function CheckoutPage() {
                 <span className="font-bold text-emerald-600">{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
               </div>
               {couponDiscount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-bold">
-                  <span>Coupon Discount</span>
-                  <span>- ₹{couponDiscount.toLocaleString("en-IN")}</span>
+                <div className="flex items-center justify-between text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-100">
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Coupon ({appliedCouponCode})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>- ₹{couponDiscount.toLocaleString("en-IN")}</span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-[10px] font-medium text-red-500 hover:underline cursor-pointer"
+                      title="Remove Coupon"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               )}
               <div className="flex justify-between pt-3 border-t border-purple-100 text-sm font-extrabold text-slate-900">

@@ -17,6 +17,8 @@ export default async function AdminCouponsPage() {
       ? Number(c.maximum_discount_amount)
       : null,
     usage_limit: c.usage_limit ? Number(c.usage_limit) : null,
+    per_user_limit: c.per_user_limit !== undefined && c.per_user_limit !== null ? Number(c.per_user_limit) : 1,
+    per_user_limit_period: c.per_user_limit_period || 'lifetime',
     used_count: Number(c.used_count || 0),
     starts_at: c.starts_at ? new Date(c.starts_at).toISOString() : new Date().toISOString(),
     expires_at: c.expires_at ? new Date(c.expires_at).toISOString() : null,

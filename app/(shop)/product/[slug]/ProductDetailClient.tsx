@@ -47,6 +47,7 @@ interface ProductDetailProps {
     shipping_info?: string | null;
     faq?: any;
     sku?: string | null;
+    stock_quantity?: number | string | null;
     images?: ProductImage[];
   };
   relatedProducts?: any[];
@@ -188,7 +189,11 @@ export default function ProductDetailClient({
 
   const addItem = useCartStore((state) => state.addItem);
 
+  const stockQuantity = Number(product.stock_quantity ?? 99);
+  const isOutOfStock = stockQuantity <= 0;
+
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
     setAddedToCart(true);
     addItem({
       productId: product.id,
@@ -197,7 +202,7 @@ export default function ProductDetailClient({
       image: selectedImage || images[0]?.image_url || '/hero-img.png',
       price: Number(product.price),
       quantity: quantity,
-      stock: 99,
+      stock: stockQuantity,
     });
     setTimeout(() => setAddedToCart(false), 2500);
   };
@@ -237,15 +242,21 @@ export default function ProductDetailClient({
             <img
               src={selectedImage}
               alt={product.name}
-              className="h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-105"
+              className={`h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-105 ${
+                isOutOfStock ? 'opacity-60 grayscale' : ''
+              }`}
             />
 
-            {/* Discount Badge */}
-            {isDiscounted && (
+            {/* Out of Stock / Discount Badges */}
+            {isOutOfStock ? (
+              <span className="absolute top-3 left-3 z-10 rounded-full bg-red-600 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+                Out of Stock
+              </span>
+            ) : isDiscounted ? (
               <span className="absolute top-3 left-3 z-10 rounded-full bg-red-500 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-xs">
                 -{discountPercentage}% OFF
               </span>
-            )}
+            ) : null}
 
             {/* Wishlist Floating Button */}
             <button
@@ -338,9 +349,15 @@ export default function ProductDetailClient({
               </p>
             </div>
 
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
-              In Stock
-            </span>
+            {isOutOfStock ? (
+              <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-700 border border-red-200">
+                Out of Stock
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                In Stock ({stockQuantity} available)
+              </span>
+            )}
           </div>
 
           {/* Short Description */}
@@ -356,9 +373,10 @@ export default function ProductDetailClient({
               <label className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
                 Quantity:
               </label>
-              <div className="flex items-center rounded-lg border border-purple-200 bg-white shadow-xs">
+              <div className={`flex items-center rounded-lg border border-purple-200 bg-white shadow-xs ${isOutOfStock ? 'opacity-50 pointer-events-none' : ''}`}>
                 <button
                   type="button"
+                  disabled={isOutOfStock}
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   className="flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-purple-50 transition-colors rounded-l-lg"
                 >
@@ -369,6 +387,7 @@ export default function ProductDetailClient({
                 </span>
                 <button
                   type="button"
+                  disabled={isOutOfStock || quantity >= stockQuantity}
                   onClick={() => setQuantity((q) => q + 1)}
                   className="flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-purple-50 transition-colors rounded-r-lg"
                 >
@@ -382,13 +401,18 @@ export default function ProductDetailClient({
               <button
                 type="button"
                 onClick={handleAddToCart}
+                disabled={isOutOfStock}
                 className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs sm:text-sm font-bold transition-all duration-300 shadow-xs ${
-                  addedToCart
+                  isOutOfStock
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                    : addedToCart
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-[#5b46f6] text-white hover:bg-[#4338ca] hover:shadow-indigo-500/20 active:scale-95'
+                    : 'bg-[#5b46f6] text-white hover:bg-[#4338ca] hover:shadow-indigo-500/20 active:scale-95 cursor-pointer'
                 }`}
               >
-                {addedToCart ? (
+                {isOutOfStock ? (
+                  <span>Out of Stock</span>
+                ) : addedToCart ? (
                   <>
                     <Check className="h-4 w-4" />
                     <span>Added to Cart!</span>
@@ -402,13 +426,22 @@ export default function ProductDetailClient({
               </button>
 
               {/* Buy Now Button */}
-              <Link
-                href="/checkout"
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-xs hover:bg-slate-800 active:scale-95 transition-all"
-              >
-                <span>Buy Now</span>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
+              {isOutOfStock ? (
+                <button
+                  disabled
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-200 px-5 py-3 text-xs sm:text-sm font-bold text-slate-400 cursor-not-allowed border border-slate-300"
+                >
+                  <span>Out of Stock</span>
+                </button>
+              ) : (
+                <Link
+                  href="/checkout"
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-xs hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+                >
+                  <span>Buy Now</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
             </div>
           </div>
 

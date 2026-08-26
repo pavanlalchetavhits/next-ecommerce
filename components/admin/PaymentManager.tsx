@@ -79,7 +79,7 @@ export default function PaymentManager({ payments = [] }: PaymentManagerProps) {
       return false;
     }
 
-    if (gatewayFilter !== 'all' && payment.payment_gateway !== gatewayFilter) {
+    if (gatewayFilter !== 'all' && payment.payment_gateway?.toLowerCase() !== gatewayFilter.toLowerCase()) {
       return false;
     }
 
