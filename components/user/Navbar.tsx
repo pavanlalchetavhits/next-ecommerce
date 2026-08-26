@@ -18,6 +18,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { useCartStore } from '@/app/store/cartstore';
+import { useWishlistStore } from '@/app/store/wishliststore';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -27,6 +28,14 @@ export default function Navbar() {
   // Dynamic Cart unique items count from Zustand store
   const items = useCartStore((state) => state.items);
   const [cartCount, setCartCount] = useState(0);
+
+  // Dynamic Wishlist count from Zustand store
+  const wishlistCount = useWishlistStore((state) => state.count);
+  const fetchWishlist = useWishlistStore((state) => state.fetchWishlist);
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [fetchWishlist]);
 
   useEffect(() => {
     setCartCount((items || []).length);
@@ -140,6 +149,11 @@ export default function Navbar() {
               title="Wishlist"
             >
               <Heart className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-110" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-extrabold ring-2 ring-white animate-in zoom-in-50 duration-200">
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
 
             {/* Shopping Cart Button */}
@@ -150,7 +164,7 @@ export default function Navbar() {
             >
               <ShoppingBag className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-110" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white text-[10px] font-extrabold ring-2 ring-white">
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-extrabold ring-2 ring-white animate-in zoom-in-50 duration-200">
                   {cartCount}
                 </span>
               )}

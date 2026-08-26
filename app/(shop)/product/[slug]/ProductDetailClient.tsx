@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileText,
@@ -23,6 +23,7 @@ import {
 import ProductCard from '@/components/user/ProductCard';
 
 import { useCartStore } from '@/app/store/cartstore';
+import { useWishlistStore } from '@/app/store/wishliststore';
 
 interface ProductImage {
   id?: number;
@@ -170,6 +171,69 @@ export default function ProductDetailClient({
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'care' | 'shipping' | 'faq'>('description');
   const [addedToCart, setAddedToCart] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  const addWishlistId = useWishlistStore((state) => state.addWishlistId);
+  const removeWishlistId = useWishlistStore((state) => state.removeWishlistId);
+
+  useEffect(() => {
+    async function checkWishlist() {
+      try {
+        const res = await fetch(`/api/wishlist/check/${product.id}`);
+        const data = await res.json();
+        if (data.success && data.data?.isWishlisted) {
+          setIsWishlisted(true);
+          addWishlistId(product.id);
+        }
+      } catch (err) {
+        console.error('Wishlist check error:', err);
+      }
+    }
+    if (product.id) {
+      checkWishlist();
+    }
+  }, [product.id, addWishlistId]);
+
+  const handleToggleWishlist = async () => {
+    if (wishlistLoading) return;
+    setWishlistLoading(true);
+
+    try {
+      if (isWishlisted) {
+        const res = await fetch(`/api/wishlist/${product.id}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (res.status === 401) {
+          window.location.href = `/login?callbackUrl=/product/${product.slug || product.id}`;
+          return;
+        }
+        if (res.ok && data.success) {
+          setIsWishlisted(false);
+          removeWishlistId(product.id);
+        }
+      } else {
+        const res = await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id: product.id }),
+        });
+        const data = await res.json();
+        if (res.status === 401) {
+          window.location.href = `/login?callbackUrl=/product/${product.slug || product.id}`;
+          return;
+        }
+        if (res.ok && data.success) {
+          setIsWishlisted(true);
+          addWishlistId(product.id);
+        }
+      }
+    } catch (err) {
+      console.error('Wishlist toggle error:', err);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   const isDiscounted =
     product.compare_at_price && Number(product.compare_at_price) > Number(product.price);
@@ -261,15 +325,16 @@ export default function ProductDetailClient({
             {/* Wishlist Floating Button */}
             <button
               type="button"
-              onClick={() => setIsWishlisted(!isWishlisted)}
-              className={`absolute top-3 right-3 z-10 flex h-8.5 w-8.5 items-center justify-center rounded-full border shadow-xs transition-all active:scale-95 ${
+              onClick={handleToggleWishlist}
+              disabled={wishlistLoading}
+              className={`absolute top-3 right-3 z-10 flex h-8.5 w-8.5 items-center justify-center rounded-full border shadow-xs transition-all active:scale-95 cursor-pointer ${
                 isWishlisted
                   ? 'bg-red-50 border-red-200 text-red-500'
                   : 'bg-white/90 border-slate-100 text-slate-400 hover:text-red-500 hover:bg-white'
               }`}
-              title="Add to Wishlist"
+              title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
             >
-              <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500' : ''}`} />
+              <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
           </div>
 
