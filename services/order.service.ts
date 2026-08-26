@@ -224,30 +224,72 @@ export async function createOrder(data: {
     country: 'India',
   };
 
-  // 2. Fetch products for items
+  // 2. Validate product availability and stock quantity
   let subtotal = 0;
   const orderItemsData: any[] = [];
 
   for (const item of data.items) {
     const [pRows]: any = await db.query(
-      `SELECT id, name, sku, price FROM products WHERE id = ? LIMIT 1`,
+      `SELECT p.id, p.name, p.sku, p.price,
+              COALESCE((SELECT SUM(quantity) FROM inventory WHERE product_id = p.id), 0) as stock_quantity
+       FROM products p 
+       WHERE p.id = ? LIMIT 1`,
       [item.product_id]
     );
     const p = pRows[0];
-    if (p) {
-      const unitPrice = Number(p.price);
-      const totalPrice = unitPrice * item.quantity;
-      subtotal += totalPrice;
-      orderItemsData.push({
-        product_id: p.id,
-        variant_id: item.variant_id || null,
-        product_name: p.name,
-        variant_name: null,
-        sku: p.sku,
-        quantity: item.quantity,
-        unit_price: unitPrice,
-        total_price: totalPrice,
-      });
+    if (!p) {
+      throw new Error(`Product with ID #${item.product_id} was not found.`);
+    }
+
+    const availableStock = Number(p.stock_quantity) || 0;
+    if (availableStock <= 0) {
+      throw new Error(`"${p.name}" is currently out of stock and cannot be ordered.`);
+    }
+    if (item.quantity > availableStock) {
+      throw new Error(`Only ${availableStock} units of "${p.name}" available in stock.`);
+    }
+
+    const unitPrice = Number(p.price);
+    const totalPrice = unitPrice * item.quantity;
+    subtotal += totalPrice;
+    orderItemsData.push({
+      product_id: p.id,
+      variant_id: item.variant_id || null,
+      product_name: p.name,
+      variant_name: null,
+      sku: p.sku,
+      quantity: item.quantity,
+      unit_price: unitPrice,
+      total_price: totalPrice,
+    });
+  }
+
+  // 3. Validate coupon usage if coupon_code is provided
+  let couponRecord: any = null;
+  if (data.coupon_code) {
+    const cleanCouponCode = data.coupon_code.trim().toUpperCase();
+    const [cRows]: any = await db.query(
+      `SELECT * FROM coupons WHERE UPPER(code) = ? LIMIT 1`,
+      [cleanCouponCode]
+    );
+    if (cRows.length > 0) {
+      couponRecord = cRows[0];
+      const perUserLimit = couponRecord.per_user_limit ? Number(couponRecord.per_user_limit) : 0;
+      if (data.user_id && perUserLimit > 0) {
+        const period = couponRecord.per_user_limit_period || 'lifetime';
+        let periodCond = '';
+        if (period === 'monthly' || period === 'once_per_month' || period === 'twice_per_month') {
+          periodCond = `AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01 00:00:00')`;
+        }
+        const [uRows]: any = await db.query(
+          `SELECT COUNT(*) as u_count FROM coupon_usages WHERE user_id = ? AND coupon_id = ? ${periodCond}`,
+          [data.user_id, couponRecord.id]
+        );
+        const userUsage = Number(uRows[0]?.u_count || 0);
+        if (userUsage >= perUserLimit) {
+          throw new Error(`You have reached the maximum usage limit for coupon ${cleanCouponCode}.`);
+        }
+      }
     }
   }
 
@@ -287,7 +329,7 @@ export async function createOrder(data: {
 
   const orderId = res.insertId;
 
-  // Insert into order_items table
+  // Insert into order_items table and deduct stock
   for (const oi of orderItemsData) {
     await db.query(
       `INSERT INTO order_items
@@ -305,7 +347,45 @@ export async function createOrder(data: {
         oi.total_price,
       ]
     );
+
+    // Deduct quantity from inventory table
+    await db.query(
+      `UPDATE inventory SET quantity = GREATEST(0, quantity - ?) WHERE product_id = ?`,
+      [oi.quantity, oi.product_id]
+    );
   }
+
+  // Record coupon usage and increment used_count
+  if (couponRecord) {
+    await db.query(
+      `UPDATE coupons SET used_count = used_count + 1 WHERE id = ?`,
+      [couponRecord.id]
+    );
+    if (data.user_id) {
+      await db.query(
+        `INSERT INTO coupon_usages (coupon_id, user_id, order_id, created_at) VALUES (?, ?, ?, NOW())`,
+        [couponRecord.id, data.user_id, orderId]
+      );
+    }
+  }
+
+  // Record payment transaction in payments table for admin tracking
+  const gateway = data.payment_method === 'cod' ? 'cod' : 'cashfree';
+  const payStatus = 'pending';
+  await db.query(
+    `INSERT INTO payments
+      (order_id, payment_gateway, payment_id, order_reference, amount, status, payment_method, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      orderId,
+      gateway,
+      `${gateway.toUpperCase()}-${orderId}`,
+      orderNumber,
+      totalAmount,
+      payStatus,
+      data.payment_method || 'cod',
+    ]
+  );
 
   return {
     order_id: orderId,

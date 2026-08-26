@@ -16,6 +16,7 @@ type Product = {
   primary_image?: string | null;
   image_url?: string | null;
   category_name?: string | null;
+  stock_quantity?: number;
 };
 
 export default function ProductCard({
@@ -26,6 +27,8 @@ export default function ProductCard({
   const [imgErr, setImgErr] = useState(false);
   const rawImageSrc = product.primary_image || product.mainImage || product.image_url;
   const imageSrc = imgErr || !rawImageSrc ? '/hero-img.png' : rawImageSrc;
+
+  const isOutOfStock = product.stock_quantity !== undefined && Number(product.stock_quantity) <= 0;
 
   // Strip HTML tags if description/short_description contains HTML string from rich editor
   const rawDesc = product.short_description || product.description || '';
@@ -45,16 +48,22 @@ export default function ProductCard({
           src={imageSrc}
           alt={product.name}
           onError={() => setImgErr(true)}
-          className="h-full w-full object-contain object-center transition-transform duration-700 ease-out group-hover:scale-108"
+          className={`h-full w-full object-contain object-center transition-transform duration-700 ease-out group-hover:scale-108 ${
+            isOutOfStock ? 'opacity-60 grayscale' : ''
+          }`}
         />
 
-        {/* Category Pill Tag */}
-        {product.category_name && (
+        {/* Out of Stock Overlay Badge */}
+        {isOutOfStock ? (
+          <span className="absolute top-3.5 left-3.5 z-10 inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+            Out of Stock
+          </span>
+        ) : product.category_name ? (
           <span className="absolute top-3.5 left-3.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-purple-50/90 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-[#5b46f6] border border-purple-100 shadow-2xs">
             <Sparkles className="h-3 w-3 text-[#5b46f6]" />
             {product.category_name}
           </span>
-        )}
+        ) : null}
 
         {/* Wishlist Button */}
         <button

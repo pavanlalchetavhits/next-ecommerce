@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createCoupon, getCoupons } from '@/services/coupon.service';
+import { createCoupon, getCoupons, getDealsCouponsWithUserUsage } from '@/services/coupon.service';
+import { auth } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +14,8 @@ export async function POST(request: Request) {
       minimum_order_amount,
       maximum_discount_amount,
       usage_limit,
+      per_user_limit,
+      per_user_limit_period,
       starts_at,
       expires_at,
       expries_at,
@@ -101,6 +104,8 @@ export async function POST(request: Request) {
         usage_limit !== undefined && usage_limit !== null && usage_limit !== ''
           ? Number(usage_limit)
           : null,
+      per_user_limit: per_user_limit ? Number(per_user_limit) : 1,
+      per_user_limit_period: per_user_limit_period || 'lifetime',
       starts_at,
       expires_at: finalExpiryDate,
       status: status === 'inactive' ? 'inactive' : 'active',
@@ -138,10 +143,20 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const session = await auth();
+    const userId = (session?.user as any)?.id ? Number((session?.user as any)?.id) : undefined;
 
+    const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || undefined;
     const status = searchParams.get('status') as 'active' | 'inactive' | null;
+
+    if (status === 'active' && !search) {
+      const dealsCoupons = await getDealsCouponsWithUserUsage(userId);
+      return NextResponse.json({
+        success: true,
+        data: dealsCoupons,
+      });
+    }
 
     const coupons = await getCoupons({
       search,
