@@ -8,10 +8,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  ShieldCheck,
-  Lock,
-  Heart,
-  ArrowRight,
   CheckCircle2,
 } from 'lucide-react';
 
@@ -153,17 +149,17 @@ export default function Footer() {
           {/* Column 3: Customer Care (3 cols) */}
           <div className="lg:col-span-3 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-              Customer Service
+              Customer Care
             </h3>
             <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
               <li>
-                <Link href="/payment" className="hover:text-indigo-400 transition-colors">
-                  Payment & Checkout
+                <Link href="/contact" className="hover:text-indigo-400 transition-colors">
+                  Contact Support
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-indigo-400 transition-colors">
-                  Contact Support
+                <Link href="/payment" className="hover:text-indigo-400 transition-colors">
+                  Payment & Checkout
                 </Link>
               </li>
               <li>
@@ -171,27 +167,51 @@ export default function Footer() {
                   About NexCart
                 </Link>
               </li>
+              <li>
+                <Link href="/profile" className="hover:text-indigo-400 transition-colors">
+                  My Account & Orders
+                </Link>
+              </li>
+              <li>
+                <Link href="/wishlist" className="hover:text-indigo-400 transition-colors">
+                  My Wishlist
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Column 4: Trust & Policies (3 cols) */}
+          {/* Column 4: Legal & Policies (3 cols) */}
           <div className="lg:col-span-3 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-              Store Guarantees
+              Legal & Policies
             </h3>
-            <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-800 space-y-3 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-                <ShieldCheck className="w-4 h-4" />
-                <span>256-Bit SSL Encrypted</span>
-              </div>
-              <div className="flex items-center gap-2 text-indigo-400 font-semibold">
-                <Lock className="w-4 h-4" />
-                <span>PCI-DSS Compliant Gateway</span>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                100% money back guarantee on all returnable items within 30 days of receipt.
-              </p>
-            </div>
+            <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
+              <li>
+                <Link href="/terms" className="hover:text-indigo-400 transition-colors">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy-policy" className="hover:text-indigo-400 transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/return-policy" className="hover:text-indigo-400 transition-colors">
+                  Return & Refund Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/cancellation-policy" className="hover:text-indigo-400 transition-colors">
+                  Cancellation Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookie-policy" className="hover:text-indigo-400 transition-colors">
+                  Cookie & Tracking Policy
+                </Link>
+              </li>
+            </ul>
           </div>
 
         </div>
