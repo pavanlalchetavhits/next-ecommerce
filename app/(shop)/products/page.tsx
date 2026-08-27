@@ -220,7 +220,7 @@ function ProductsContent() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 overflow-x-hidden">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-purple-200/50 pb-6">
         <div>
@@ -230,10 +230,10 @@ function ProductsContent() {
               {activeCategoryObject ? activeCategoryObject.name : "NexCart Catalog"}
             </span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 font-display">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 font-display">
             {activeCategoryObject ? `${activeCategoryObject.name} Collection` : "Explore Our Collection"}
           </h1>
-          <p className="mt-2 text-sm text-slate-600 max-w-xl">
+          <p className="mt-2 text-xs sm:text-sm text-slate-600 max-w-xl">
             {activeCategoryObject
               ? `Browse high-quality products under ${activeCategoryObject.name}.`
               : "Discover premium gadgets, wearables, home essentials & lifestyle products."}
@@ -243,7 +243,7 @@ function ProductsContent() {
         {/* Live Results Count Badge */}
         {!loading && !error && (
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs border border-purple-100">
+            <span className="inline-flex items-center rounded-xl bg-white px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold text-slate-700 shadow-xs border border-purple-100">
               <span className="h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
               {pagination.total} {pagination.total === 1 ? "Product" : "Products"} Total
             </span>
@@ -252,7 +252,7 @@ function ProductsContent() {
       </div>
 
       {/* Modern Filter Toolbar */}
-      <div className="rounded-2xl border border-purple-100 bg-white/70 backdrop-blur-md p-4 sm:p-5 shadow-xs">
+      <div className="rounded-2xl border border-purple-100 bg-white/70 backdrop-blur-md p-3 sm:p-5 shadow-xs">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           
           {/* MUI Search Input */}
