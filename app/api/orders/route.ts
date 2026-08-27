@@ -54,8 +54,15 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    const userId = (session?.user as any)?.id || 1;
 
+    if (!session || !session.user || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, message: 'Please sign in to place an order.' },
+        { status: 401 }
+      );
+    }
+
+    const userId = Number((session.user as any).id);
     const body = await request.json();
 
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
@@ -66,7 +73,7 @@ export async function POST(request: Request) {
     }
 
     const orderResult = await createOrder({
-      user_id: Number(userId),
+      user_id: userId,
       ...body,
     });
 

@@ -8,6 +8,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  itemLabel?: string;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export default function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  itemLabel = 'items',
   className = '',
 }: PaginationProps) {
   if (totalPages <= 1) return null;
@@ -62,7 +64,7 @@ export default function Pagination({
         <strong className="text-slate-900 font-bold">
           {startItem}–{endItem}
         </strong>{' '}
-        of <strong className="text-slate-900 font-bold">{totalItems}</strong> products
+        of <strong className="text-slate-900 font-bold">{totalItems}</strong> {itemLabel}
       </span>
 
       {/* Pagination Controls */}

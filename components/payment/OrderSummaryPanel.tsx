@@ -91,6 +91,7 @@ export default function OrderSummaryPanel({
                   src={item.product_image}
                   alt={item.product_name}
                   fill
+                  unoptimized
                   className="object-cover"
                 />
               ) : (

@@ -390,12 +390,11 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                       {c.discount_type === 'percentage' ? (
                         <span className="inline-flex items-center gap-1 text-emerald-600">
                           <Percent className="h-3.5 w-3.5" />
-                          {c.discount_value}% OFF
+                          {Number(c.discount_value)}% OFF
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-emerald-600">
-                          <DollarSign className="h-3.5 w-3.5" />
-                          ${Number(c.discount_value).toFixed(2)} OFF
+                          ₹{Number(c.discount_value).toLocaleString('en-IN')} OFF
                         </span>
                       )}
                     </td>
@@ -403,11 +402,11 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                     {/* Min Order & Max Cap */}
                     <td className="py-4 px-4 text-xs text-[#64748B]">
                       <p className="font-semibold text-[#0F172A]">
-                        Min Order: ${Number(c.minimum_order_amount || 0).toFixed(2)}
+                        Min Order: ₹{Number(c.minimum_order_amount || 0).toLocaleString('en-IN')}
                       </p>
                       {c.maximum_discount_amount && (
                         <p className="text-[#94A3B8]">
-                          Max Cap: ${Number(c.maximum_discount_amount).toFixed(2)}
+                          Max Cap: ₹{Number(c.maximum_discount_amount).toLocaleString('en-IN')}
                         </p>
                       )}
                     </td>
@@ -534,15 +533,15 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                 <span className="font-bold text-[#707EAE] uppercase text-[10px]">Discount Value</span>
                 <p className="text-sm font-extrabold text-emerald-600 mt-0.5">
                   {viewingCoupon.discount_type === 'percentage'
-                    ? `${viewingCoupon.discount_value}% OFF`
-                    : `$${Number(viewingCoupon.discount_value).toFixed(2)} OFF`}
+                    ? `${Number(viewingCoupon.discount_value)}% OFF`
+                    : `₹${Number(viewingCoupon.discount_value).toLocaleString('en-IN')} OFF`}
                 </p>
               </div>
 
               <div>
                 <span className="font-bold text-[#707EAE] uppercase text-[10px]">Min Order Amount</span>
                 <p className="text-xs font-bold text-[#0F172A] mt-0.5">
-                  ${Number(viewingCoupon.minimum_order_amount || 0).toFixed(2)}
+                  ₹{Number(viewingCoupon.minimum_order_amount || 0).toLocaleString('en-IN')}
                 </p>
               </div>
 
@@ -550,7 +549,7 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                 <span className="font-bold text-[#707EAE] uppercase text-[10px]">Max Savings Cap</span>
                 <p className="text-xs font-bold text-[#0F172A] mt-0.5">
                   {viewingCoupon.maximum_discount_amount
-                    ? `$${Number(viewingCoupon.maximum_discount_amount).toFixed(2)}`
+                    ? `₹${Number(viewingCoupon.maximum_discount_amount).toLocaleString('en-IN')}`
                     : 'No Maximum Cap'}
                 </p>
               </div>

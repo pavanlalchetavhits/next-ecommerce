@@ -228,6 +228,7 @@ export default function RegisterPage() {
               id="register-name"
               name="name"
               label="Full Name"
+              placeholder="e.g. John Doe"
               type="text"
               fullWidth
               required
@@ -259,6 +260,7 @@ export default function RegisterPage() {
               id="register-phone"
               name="phone"
               label="Phone Number (Optional)"
+              placeholder="e.g. 9876543210"
               type="tel"
               fullWidth
               value={form.phone}
@@ -290,6 +292,7 @@ export default function RegisterPage() {
               id="register-email"
               name="email"
               label="Email Address"
+              placeholder="name@example.com"
               type="email"
               fullWidth
               required
@@ -322,6 +325,7 @@ export default function RegisterPage() {
               id="register-password"
               name="password"
               label="Password"
+              placeholder="Create password (min 6 chars)"
               type={showPassword ? 'text' : 'password'}
               fullWidth
               required
@@ -365,6 +369,7 @@ export default function RegisterPage() {
               id="register-confirm-password"
               name="confirmPassword"
               label="Confirm Password"
+              placeholder="Re-enter password"
               type={showConfirmPassword ? 'text' : 'password'}
               fullWidth
               required

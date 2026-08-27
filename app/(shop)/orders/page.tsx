@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Filter,
 } from 'lucide-react';
+import Pagination from '@/components/ui/Pagination';
 
 type OrderItem = {
   id: number;
@@ -26,6 +27,8 @@ type OrderItem = {
   shipping_full_name: string;
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export default function MyOrdersPage() {
   const router = useRouter();
 
@@ -33,6 +36,7 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function fetchUserOrders() {
     try {
@@ -69,6 +73,17 @@ export default function MyOrdersPage() {
     }
     return true;
   });
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE) || 1;
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleFilterChange = (filter: string) => {
+    setStatusFilter(filter);
+    setCurrentPage(1);
+  };
 
   if (loading) {
     return (
@@ -130,7 +145,7 @@ export default function MyOrdersPage() {
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4">
           <button
             type="button"
-            onClick={() => setStatusFilter('all')}
+            onClick={() => handleFilterChange('all')}
             className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               statusFilter === 'all'
                 ? 'bg-[#5b46f6] text-white shadow-xs'
@@ -141,7 +156,7 @@ export default function MyOrdersPage() {
           </button>
           <button
             type="button"
-            onClick={() => setStatusFilter('confirmed')}
+            onClick={() => handleFilterChange('confirmed')}
             className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               statusFilter === 'confirmed'
                 ? 'bg-[#5b46f6] text-white shadow-xs'
@@ -152,7 +167,7 @@ export default function MyOrdersPage() {
           </button>
           <button
             type="button"
-            onClick={() => setStatusFilter('shipped')}
+            onClick={() => handleFilterChange('shipped')}
             className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               statusFilter === 'shipped'
                 ? 'bg-[#5b46f6] text-white shadow-xs'
@@ -163,7 +178,7 @@ export default function MyOrdersPage() {
           </button>
           <button
             type="button"
-            onClick={() => setStatusFilter('delivered')}
+            onClick={() => handleFilterChange('delivered')}
             className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
               statusFilter === 'delivered'
                 ? 'bg-[#5b46f6] text-white shadow-xs'
@@ -194,7 +209,7 @@ export default function MyOrdersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredOrders.map((ord) => {
+          {paginatedOrders.map((ord) => {
             const statusBg =
               ord.status === 'delivered'
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -264,6 +279,16 @@ export default function MyOrdersPage() {
               </div>
             );
           })}
+
+          {/* Reusable Pagination Component */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredOrders.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={(page) => setCurrentPage(page)}
+            itemLabel="orders"
+          />
         </div>
       )}
     </div>

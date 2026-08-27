@@ -40,11 +40,11 @@ const sampleCoupons = [
   },
   {
     code: 'FLASH50',
-    description: 'Limited time flash sale voucher! 50% super discount up to ₹1,000 max savings.',
+    description: 'Limited time flash sale voucher! 50% super discount up to ₹500 max savings.',
     discount_type: 'percentage' as const,
     discount_value: 50,
     minimum_order_amount: 999,
-    maximum_discount_amount: 1000,
+    maximum_discount_amount: 500,
     usage_limit: 100,
     starts_at: '2026-08-20 00:00:00',
     expires_at: '2026-08-31 23:59:59',
