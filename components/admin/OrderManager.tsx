@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ShoppingBag,
@@ -85,6 +85,19 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Lock background body scroll when modal is open
+  useEffect(() => {
+    if (viewingOrder) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [viewingOrder]);
 
   // Statistics
   const totalOrders = orders.length;
@@ -446,8 +459,8 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
       {/* --- ORDER DETAILS & STATUS UPDATE MODAL --- */}
       {viewingOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl rounded-2xl border border-[#E9EDF7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150 no-scrollbar">
+          <div className="w-full max-w-2xl rounded-2xl border border-[#E9EDF7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto no-scrollbar">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#E9EDF7] pb-4">
               <div className="flex items-center gap-3">

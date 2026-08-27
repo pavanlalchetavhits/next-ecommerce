@@ -1,34 +1,35 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getOrders, createOrder } from "@/services/order.service";
 
-import {
-  getOrders,
-  createOrder,
-} from "@/services/order.service";
-
-export async function GET(
-  request: Request
-) {
+export async function GET(request: Request) {
   try {
-    const { searchParams } =
-      new URL(request.url);
+    const session = await auth();
+    const { searchParams } = new URL(request.url);
 
-    const search =
-      searchParams.get("search") ||
-      undefined;
+    const search = searchParams.get("search") || undefined;
+    const status = searchParams.get("status") || undefined;
+    const paymentStatus = searchParams.get("paymentStatus") || undefined;
+    const reqUserId = searchParams.get("userId") || undefined;
 
-    const status =
-      searchParams.get("status") ||
-      undefined;
+    let targetUserId: number | undefined = undefined;
 
-    const paymentStatus =
-      searchParams.get("paymentStatus") ||
-      undefined;
+    if (session?.user) {
+      if (session.user.role === 'admin') {
+        targetUserId = reqUserId ? Number(reqUserId) : undefined;
+      } else {
+        // Enforce user-wise filtering for logged in customers
+        targetUserId = Number(session.user.id);
+      }
+    } else if (reqUserId) {
+      targetUserId = Number(reqUserId);
+    }
 
     const orders = await getOrders({
       search,
       status,
       paymentStatus,
+      userId: targetUserId,
     });
 
     return NextResponse.json({
@@ -36,10 +37,7 @@ export async function GET(
       data: orders,
     });
   } catch (error) {
-    console.error(
-      "Get orders error:",
-      error
-    );
+    console.error("Get orders error:", error);
 
     return NextResponse.json(
       {

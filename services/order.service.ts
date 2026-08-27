@@ -4,10 +4,12 @@ export async function getOrders({
   search,
   status,
   paymentStatus,
+  userId,
 }: {
   search?: string;
   status?: string;
   paymentStatus?: string;
+  userId?: number;
 }) {
   let sql = `
         select
@@ -54,6 +56,11 @@ export async function getOrders({
     `;
 
   const params: any[] = [];
+
+  if (userId) {
+    sql += ` AND o.user_id = ? `;
+    params.push(userId);
+  }
 
   if (search) {
     sql += `

@@ -20,8 +20,13 @@ import {
 import { useCartStore } from '@/app/store/cartstore';
 import { useWishlistStore } from '@/app/store/wishliststore';
 
+import { useSession } from 'next-auth/react';
+
 export default function Navbar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const user = session?.user;
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -170,13 +175,19 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Account Link */}
+            {/* Account / Profile Link */}
             <Link
-              href="/login"
+              href={user ? '/profile' : '/login?callbackUrl=/profile'}
               className="flex relative items-center justify-center w-10 h-10 rounded-full bg-white text-slate-700 border border-purple-100/80 shadow-2xs hover:bg-[#5b46f6] hover:text-white hover:border-[#5b46f6] hover:scale-110 active:scale-95 transition-all duration-300 group"
-              title="Account Login"
+              title={user ? `Logged in as ${user.name || 'User'}` : 'Account Login'}
             >
-              <User className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-110" />
+              {user ? (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-[#5b46f6] to-purple-500 text-xs font-extrabold text-white shadow-2xs">
+                  {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                <User className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-110" />
+              )}
             </Link>
 
             {/* Mobile Menu Toggle Button */}
