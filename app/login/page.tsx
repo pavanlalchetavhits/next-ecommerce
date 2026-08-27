@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState, Suspense } from 'react';
+import { FormEvent, useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ import {
   SvgIconProps,
 } from '@mui/material';
 import SplitAuthLayout from '@/components/auth/SplitAuthLayout';
+import { loginSchema } from '@/lib/validations/user';
 
 function ShoppingBagIcon(props: SvgIconProps) {
   return (
@@ -58,16 +59,43 @@ function VisibilityOffIcon(props: SvgIconProps) {
   );
 }
 
-function RegisteredAlert() {
+function AuthStatusAlerts() {
   const searchParams = useSearchParams();
   const registered = searchParams.get('registered');
+  const reset = searchParams.get('reset');
 
-  if (registered !== 'true') return null;
+  const [visibleMessage, setVisibleMessage] = useState<string | null>(
+    registered === 'true'
+      ? 'Account created successfully! Please sign in below.'
+      : reset === 'success'
+      ? 'Password reset successfully! Please sign in with your new password.'
+      : null
+  );
+
+  useEffect(() => {
+    if (registered === 'true') {
+      setVisibleMessage('Account created successfully! Please sign in below.');
+    } else if (reset === 'success') {
+      setVisibleMessage('Password reset successfully! Please sign in with your new password.');
+    }
+  }, [registered, reset]);
+
+  useEffect(() => {
+    if (visibleMessage) {
+      const timer = setTimeout(() => {
+        setVisibleMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [visibleMessage]);
+
+  if (!visibleMessage) return null;
 
   return (
     <Alert
       severity="success"
       variant="filled"
+      onClose={() => setVisibleMessage(null)}
       sx={{
         mb: 3,
         borderRadius: 2.5,
@@ -78,7 +106,7 @@ function RegisteredAlert() {
         boxShadow: '0 4px 14px rgba(5, 205, 153, 0.25)',
       }}
     >
-      Account created successfully! Please sign in below.
+      {visibleMessage}
     </Alert>
   );
 }
@@ -90,13 +118,55 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const [error, setError] = useState('');
+  const [globalError, setGlobalError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+
+  // Auto-dismiss global error message after 5 seconds
+  useEffect(() => {
+    if (globalError) {
+      const timer = setTimeout(() => {
+        setGlobalError('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [globalError]);
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (fieldErrors.email) {
+      setFieldErrors((prev) => ({ ...prev, email: undefined }));
+    }
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (fieldErrors.password) {
+      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setGlobalError('');
+    setFieldErrors({});
 
-    setError('');
+    // Client-side Zod validation
+    const validationResult = loginSchema.safeParse({ email, password });
+
+    if (!validationResult.success) {
+      const formattedErrors: { email?: string; password?: string } = {};
+      validationResult.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0] as keyof typeof formattedErrors;
+        if (fieldName && !formattedErrors[fieldName]) {
+          formattedErrors[fieldName] = issue.message;
+        }
+      });
+      setFieldErrors(formattedErrors);
+      setGlobalError('Please fix the validation errors below.');
+      return;
+    }
+
     setLoading(true);
 
     const result = await signIn('credentials', {
@@ -108,7 +178,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (!result || result.error) {
-      setError('Invalid email or password. Please try again.');
+      setGlobalError('Invalid email or password. Please check your credentials and try again.');
       return;
     }
 
@@ -132,13 +202,14 @@ export default function LoginPage() {
       formMaxWidth={440}
     >
       <Suspense fallback={null}>
-        <RegisteredAlert />
+        <AuthStatusAlerts />
       </Suspense>
 
-      {error && (
+      {globalError && (
         <Alert
           severity="error"
           variant="filled"
+          onClose={() => setGlobalError('')}
           sx={{
             mb: 3,
             borderRadius: 2.5,
@@ -146,7 +217,7 @@ export default function LoginPage() {
             fontSize: '0.875rem',
           }}
         >
-          {error}
+          {globalError}
         </Alert>
       )}
 
@@ -163,50 +234,85 @@ export default function LoginPage() {
           fullWidth
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => handleEmailChange(e.target.value)}
+          error={Boolean(fieldErrors.email)}
+          helperText={fieldErrors.email}
           variant="outlined"
           slotProps={{
+            htmlInput: {
+              maxLength: 100,
+            },
+            formHelperText: {
+              sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+            },
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailIcon sx={{ color: '#6366F1' }} />
+                  <EmailIcon sx={{ color: fieldErrors.email ? '#EE5D50' : '#6366F1' }} />
                 </InputAdornment>
               ),
             },
           }}
         />
 
-        <TextField
-          id="customer-password"
-          label="Password"
-          type={showPassword ? 'text' : 'password'}
-          fullWidth
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          variant="outlined"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon sx={{ color: '#6366F1' }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                    sx={{ color: '#94A3B8' }}
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <TextField
+            id="customer-password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            fullWidth
+            required
+            value={password}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            error={Boolean(fieldErrors.password)}
+            helperText={fieldErrors.password}
+            variant="outlined"
+            slotProps={{
+              htmlInput: {
+                maxLength: 64,
+              },
+              formHelperText: {
+                sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+              },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon sx={{ color: fieldErrors.password ? '#EE5D50' : '#6366F1' }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: '#94A3B8' }}
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 0.5 }}>
+            <Typography
+              component={Link}
+              href="/forgot-password"
+              variant="body2"
+              sx={{
+                color: '#6366F1',
+                fontWeight: 600,
+                fontSize: '0.8125rem',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              Forgot Password?
+            </Typography>
+          </Box>
+        </Box>
 
         <Button
           id="customer-submit-btn"

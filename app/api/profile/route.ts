@@ -102,7 +102,7 @@ export async function PUT(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Name is required',
+          message: 'Full Name is required',
         },
         {
           status: 400,
@@ -110,11 +110,11 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (name.length > 150) {
+    if (name.length < 2) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Name must be less than 150 characters',
+          message: 'Full Name must be at least 2 characters',
         },
         {
           status: 400,
@@ -122,11 +122,35 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (phone.length > 20) {
+    if (name.length > 50) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Phone number is too long',
+          message: 'Full Name cannot exceed 50 characters',
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!/^[a-zA-Z\s]+$/.test(name)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Full Name can only contain letters and spaces',
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (phone && (!/^\d+$/.test(phone) || phone.length > 10)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Phone number cannot exceed 10 digits',
         },
         {
           status: 400,

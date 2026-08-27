@@ -110,6 +110,22 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [profileFieldErrors, setProfileFieldErrors] = useState<{ name?: string; phone?: string }>({});
+
+  // Auto-dismiss save error/success messages after 5 seconds
+  useEffect(() => {
+    if (saveMessage) {
+      const timer = setTimeout(() => setSaveMessage(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveMessage]);
+
+  useEffect(() => {
+    if (saveError) {
+      const timer = setTimeout(() => setSaveError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveError]);
 
   // Change Password states
   const [currentPassword, setCurrentPassword] = useState('');
@@ -221,13 +237,43 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaveMessage('');
     setSaveError('');
+    setProfileFieldErrors({});
+
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
+    const errors: { name?: string; phone?: string } = {};
+
+    if (!trimmedName) {
+      errors.name = 'Full Name is required';
+    } else if (trimmedName.length < 2) {
+      errors.name = 'Full Name must be at least 2 characters';
+    } else if (trimmedName.length > 50) {
+      errors.name = 'Full Name cannot exceed 50 characters';
+    } else if (!/^[a-zA-Z\s]+$/.test(trimmedName)) {
+      errors.name = 'Full Name can only contain letters and spaces';
+    }
+
+    if (trimmedPhone) {
+      if (!/^\d+$/.test(trimmedPhone)) {
+        errors.phone = 'Phone number must contain numbers only';
+      } else if (trimmedPhone.length > 10) {
+        errors.phone = 'Phone number cannot exceed 10 digits';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setProfileFieldErrors(errors);
+      setSaveError('Please fix the validation errors highlighted below.');
+      return;
+    }
+
     setSaving(true);
 
     try {
       const res = await fetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone }),
+        body: JSON.stringify({ name: trimmedName, phone: trimmedPhone }),
       });
 
       const data = await res.json();
@@ -237,9 +283,8 @@ export default function ProfilePage() {
 
       setSaveMessage('Profile information updated successfully!');
       if (profile) {
-        setProfile({ ...profile, name, phone });
+        setProfile({ ...profile, name: trimmedName, phone: trimmedPhone });
       }
-      setTimeout(() => setSaveMessage(''), 4000);
     } catch (err: any) {
       console.error('Update profile error:', err);
       setSaveError(err.message || 'Failed to update profile');
@@ -326,16 +371,56 @@ export default function ProfilePage() {
     e.preventDefault();
     setAddrMsg('');
     setAddrErr('');
+
+    const trimmedFullName = addrFullName.trim();
+    const trimmedPhone = addrPhone.trim();
+    const trimmedPostalCode = addrPostalCode.trim();
+
+    if (!trimmedFullName) {
+      setAddrErr('Full Name is required');
+      return;
+    }
+
+    if (trimmedFullName.length < 2) {
+      setAddrErr('Full Name must be at least 2 characters');
+      return;
+    }
+
+    if (!/^[a-zA-Z\s]+$/.test(trimmedFullName)) {
+      setAddrErr('Full Name can only contain letters and spaces');
+      return;
+    }
+
+    if (!/^\d{10}$/.test(trimmedPhone)) {
+      setAddrErr('Phone number must contain exactly 10 digits');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(trimmedPostalCode)) {
+      setAddrErr('Postal code must contain exactly 6 digits');
+      return;
+    }
+
+    if (addrLine1.trim().length > 500) {
+      setAddrErr('Address Line 1 cannot exceed 500 characters');
+      return;
+    }
+
+    if (addrLine2 && addrLine2.trim().length > 500) {
+      setAddrErr('Address Line 2 cannot exceed 500 characters');
+      return;
+    }
+
     setAddrSaving(true);
 
     const payload = {
-      full_name: addrFullName,
-      phone: addrPhone,
+      full_name: trimmedFullName,
+      phone: trimmedPhone,
       address_line1: addrLine1,
       address_line2: addrLine2,
       city: addrCity,
       state: addrState,
-      postal_code: addrPostalCode,
+      postal_code: trimmedPostalCode,
       country: addrCountry,
       address_type: addrType,
     };
@@ -600,19 +685,35 @@ export default function ProfilePage() {
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <div>
                   <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Full Name
+                    Full Name *
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                    <User className={`absolute left-3.5 top-3.5 h-4 w-4 ${profileFieldErrors.name ? 'text-red-500' : 'text-slate-400'}`} />
                     <input
                       type="text"
+                      maxLength={50}
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 50);
+                        setName(val);
+                        if (profileFieldErrors.name) {
+                          setProfileFieldErrors((prev) => ({ ...prev, name: undefined }));
+                        }
+                      }}
                       required
-                      className="w-full rounded-2xl border border-slate-200 py-3 pl-10 pr-4 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none focus:ring-2 focus:ring-purple-100"
-                      placeholder="Enter your full name"
+                      className={`w-full rounded-2xl border py-3 pl-10 pr-4 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 ${
+                        profileFieldErrors.name
+                          ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+                          : 'border-slate-200 focus:border-[#5b46f6] focus:ring-purple-100'
+                      }`}
+                      placeholder="Enter your full name (Max 50 characters)"
                     />
                   </div>
+                  {profileFieldErrors.name && (
+                    <p className="mt-1 text-[11px] font-semibold text-red-500 whitespace-nowrap">
+                      {profileFieldErrors.name}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -635,15 +736,31 @@ export default function ProfilePage() {
                     Phone Number
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                    <Phone className={`absolute left-3.5 top-3.5 h-4 w-4 ${profileFieldErrors.phone ? 'text-red-500' : 'text-slate-400'}`} />
                     <input
                       type="text"
+                      maxLength={10}
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 py-3 pl-10 pr-4 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none focus:ring-2 focus:ring-purple-100"
-                      placeholder="Enter mobile phone number"
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setPhone(val);
+                        if (profileFieldErrors.phone) {
+                          setProfileFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                        }
+                      }}
+                      className={`w-full rounded-2xl border py-3 pl-10 pr-4 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 ${
+                        profileFieldErrors.phone
+                          ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+                          : 'border-slate-200 focus:border-[#5b46f6] focus:ring-purple-100'
+                      }`}
+                      placeholder="Enter mobile phone number (Max 10 digits)"
                     />
                   </div>
+                  {profileFieldErrors.phone && (
+                    <p className="mt-1 text-[11px] font-semibold text-red-500 whitespace-nowrap">
+                      {profileFieldErrors.phone}
+                    </p>
+                  )}
                 </div>
 
                 <div className="pt-2">
@@ -982,11 +1099,12 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={addrFullName}
-                    onChange={(e) => setAddrFullName(e.target.value)}
+                    onChange={(e) => setAddrFullName(e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 50))}
                     required
                     className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
-                    placeholder="Recipient name"
+                    placeholder="Recipient name (Max 50 chars)"
                   />
                 </div>
 
@@ -996,11 +1114,12 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
+                    maxLength={10}
                     value={addrPhone}
-                    onChange={(e) => setAddrPhone(e.target.value)}
+                    onChange={(e) => setAddrPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     required
                     className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
-                    placeholder="Mobile number"
+                    placeholder="Mobile number (10 digits)"
                   />
                 </div>
               </div>
@@ -1011,11 +1130,12 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="text"
+                  maxLength={500}
                   value={addrLine1}
                   onChange={(e) => setAddrLine1(e.target.value)}
                   required
                   className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
-                  placeholder="Street address, house/flat number"
+                  placeholder="Street address, house/flat number (Max 500 chars)"
                 />
               </div>
 
@@ -1025,10 +1145,11 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="text"
+                  maxLength={500}
                   value={addrLine2}
                   onChange={(e) => setAddrLine2(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
-                  placeholder="Apartment, suite, landmark"
+                  placeholder="Apartment, suite, landmark (Max 500 chars)"
                 />
               </div>
 
@@ -1069,11 +1190,12 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
+                    maxLength={6}
                     value={addrPostalCode}
-                    onChange={(e) => setAddrPostalCode(e.target.value)}
+                    onChange={(e) => setAddrPostalCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     required
                     className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
-                    placeholder="Pincode / ZIP"
+                    placeholder="6-digit Pincode / ZIP"
                   />
                 </div>
 

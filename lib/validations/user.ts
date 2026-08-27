@@ -1,26 +1,103 @@
 import { z } from 'zod';
 
 export const registerSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Full Name must be at least 2 characters')
+    .max(50, 'Full Name cannot exceed 50 characters')
+    .regex(/^[a-zA-Z\s]+$/, 'Full Name can only contain letters and spaces'),
 
-    name: z
-        .string()
-        .min(2,'Name must be at least 2 characters')
-        .max(150),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email address is required')
+    .email('Please enter a valid email address (e.g. name@example.com)')
+    .max(100, 'Email cannot exceed 100 characters'),
 
-    email: z
-        .string()
-        .email('Invalid email address')
-        .max(255),
-    
-    password: z
-        .string()
-        .min(8,'Password must be leat 8 characters')
-        .max(100),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters long')
+    .max(64, 'Password cannot exceed 64 characters')
+    .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least 1 number'),
 
-    phone: z
-        .string()
-        .max(20)
-        .optional(),
-})
+  phone: z
+    .string()
+    .trim()
+    .max(10, 'Phone number cannot exceed 10 digits')
+    .regex(/^\d*$/, 'Phone number must contain numbers only')
+    .optional()
+    .or(z.literal('')),
+});
+
+export const registerFormSchema = registerSchema.extend({
+  confirmPassword: z
+    .string()
+    .min(1, 'Please confirm your password')
+    .max(64, 'Confirm password cannot exceed 64 characters'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
+
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email address is required')
+    .email('Please enter a valid email address (e.g. name@example.com)')
+    .max(100, 'Email cannot exceed 100 characters'),
+
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .max(64, 'Password cannot exceed 64 characters'),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email address is required')
+    .email('Please enter a valid email address (e.g. name@example.com)')
+    .max(100, 'Email cannot exceed 100 characters'),
+});
+
+export const resetPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email address is required')
+    .email('Please enter a valid email address')
+    .max(100, 'Email cannot exceed 100 characters'),
+
+  token: z
+    .string()
+    .trim()
+    .min(1, 'Reset token is required')
+    .max(100, 'Reset token is invalid'),
+
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters long')
+    .max(64, 'Password cannot exceed 64 characters')
+    .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least 1 number'),
+
+  confirmNewPassword: z
+    .string()
+    .min(1, 'Please confirm your new password')
+    .max(64, 'Confirm password cannot exceed 64 characters'),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmNewPassword'],
+});
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type RegisterFormInput = z.infer<typeof registerFormSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

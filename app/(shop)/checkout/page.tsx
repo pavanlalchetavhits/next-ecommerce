@@ -196,15 +196,53 @@ export default function CheckoutPage() {
    */
   async function handleSaveAddress(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+
+    const trimmedFullName = newAddress.full_name.trim();
+    const trimmedPhone = newAddress.phone.trim();
+    const trimmedLine1 = newAddress.address_line1.trim();
+    const trimmedLine2 = newAddress.address_line2.trim();
+    const trimmedPostalCode = newAddress.postal_code.trim();
+
     if (
-      !newAddress.full_name ||
-      !newAddress.phone ||
-      !newAddress.address_line1 ||
-      !newAddress.city ||
-      !newAddress.state ||
-      !newAddress.postal_code
+      !trimmedFullName ||
+      !trimmedPhone ||
+      !trimmedLine1 ||
+      !newAddress.city.trim() ||
+      !newAddress.state.trim() ||
+      !trimmedPostalCode
     ) {
       setError("Please fill in all required address fields.");
+      return;
+    }
+
+    if (trimmedFullName.length < 2) {
+      setError("Full Name must be at least 2 characters.");
+      return;
+    }
+
+    if (!/^[a-zA-Z\s]+$/.test(trimmedFullName)) {
+      setError("Full Name can only contain letters and spaces.");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(trimmedPhone)) {
+      setError("Phone number must contain exactly 10 digits.");
+      return;
+    }
+
+    if (trimmedLine1.length > 500) {
+      setError("Address Line 1 cannot exceed 500 characters.");
+      return;
+    }
+
+    if (trimmedLine2.length > 500) {
+      setError("Address Line 2 cannot exceed 500 characters.");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(trimmedPostalCode)) {
+      setError("Postal code must contain exactly 6 digits.");
       return;
     }
 
@@ -221,6 +259,11 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...newAddress,
+          full_name: trimmedFullName,
+          phone: trimmedPhone,
+          address_line1: trimmedLine1,
+          address_line2: trimmedLine2,
+          postal_code: trimmedPostalCode,
           is_default: addresses.length === 0,
         }),
       });
@@ -557,17 +600,29 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input
                       type="text"
-                      placeholder="Full Name *"
+                      maxLength={50}
+                      placeholder="Full Name * (Max 50 chars)"
                       value={newAddress.full_name}
-                      onChange={(e) => setNewAddress({ ...newAddress, full_name: e.target.value })}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          full_name: e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 50),
+                        })
+                      }
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
                       required
                     />
                     <input
                       type="text"
-                      placeholder="Phone Number *"
+                      maxLength={10}
+                      placeholder="Phone Number * (10 digits)"
                       value={newAddress.phone}
-                      onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                        })
+                      }
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
                       required
                     />
@@ -575,7 +630,8 @@ export default function CheckoutPage() {
 
                   <input
                     type="text"
-                    placeholder="Flat / Building / House No., Street *"
+                    maxLength={500}
+                    placeholder="Flat / Building / House No., Street * (Max 500 chars)"
                     value={newAddress.address_line1}
                     onChange={(e) => setNewAddress({ ...newAddress, address_line1: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
@@ -584,7 +640,8 @@ export default function CheckoutPage() {
 
                   <input
                     type="text"
-                    placeholder="Landmark / Area / Suite (Optional)"
+                    maxLength={500}
+                    placeholder="Landmark / Area / Suite (Optional, Max 500 chars)"
                     value={newAddress.address_line2}
                     onChange={(e) => setNewAddress({ ...newAddress, address_line2: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
@@ -609,9 +666,15 @@ export default function CheckoutPage() {
                     />
                     <input
                       type="text"
-                      placeholder="Pincode *"
+                      maxLength={6}
+                      placeholder="Pincode * (6 digits)"
                       value={newAddress.postal_code}
-                      onChange={(e) => setNewAddress({ ...newAddress, postal_code: e.target.value })}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          postal_code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                        })
+                      }
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
                       required
                     />

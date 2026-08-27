@@ -1,10 +1,12 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Box,
+  Typography,
   TextField,
   Button,
   Alert,
@@ -15,6 +17,7 @@ import {
   SvgIconProps,
 } from '@mui/material';
 import SplitAuthLayout from '@/components/auth/SplitAuthLayout';
+import { loginSchema } from '@/lib/validations/user';
 
 function LockIcon(props: SvgIconProps) {
   return (
@@ -56,6 +59,51 @@ function AdminShieldIcon(props: SvgIconProps) {
   );
 }
 
+function AdminStatusAlerts() {
+  const searchParams = useSearchParams();
+  const reset = searchParams.get('reset');
+
+  const [visibleMessage, setVisibleMessage] = useState<string | null>(
+    reset === 'success' ? 'Admin password reset successfully! Please sign in below.' : null
+  );
+
+  useEffect(() => {
+    if (reset === 'success') {
+      setVisibleMessage('Admin password reset successfully! Please sign in below.');
+    }
+  }, [reset]);
+
+  useEffect(() => {
+    if (visibleMessage) {
+      const timer = setTimeout(() => {
+        setVisibleMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [visibleMessage]);
+
+  if (!visibleMessage) return null;
+
+  return (
+    <Alert
+      severity="success"
+      variant="filled"
+      onClose={() => setVisibleMessage(null)}
+      sx={{
+        mb: 3,
+        borderRadius: 2.5,
+        backgroundColor: '#05CD99',
+        color: '#ffffff',
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        boxShadow: '0 4px 14px rgba(5, 205, 153, 0.25)',
+      }}
+    >
+      {visibleMessage}
+    </Alert>
+  );
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
 
@@ -63,13 +111,54 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const [error, setError] = useState('');
+  const [globalError, setGlobalError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+
+  // Auto-dismiss global error message after 5 seconds
+  useEffect(() => {
+    if (globalError) {
+      const timer = setTimeout(() => {
+        setGlobalError('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [globalError]);
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (fieldErrors.email) {
+      setFieldErrors((prev) => ({ ...prev, email: undefined }));
+    }
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (fieldErrors.password) {
+      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setGlobalError('');
+    setFieldErrors({});
 
-    setError('');
+    const validationResult = loginSchema.safeParse({ email, password });
+
+    if (!validationResult.success) {
+      const formattedErrors: { email?: string; password?: string } = {};
+      validationResult.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0] as keyof typeof formattedErrors;
+        if (fieldName && !formattedErrors[fieldName]) {
+          formattedErrors[fieldName] = issue.message;
+        }
+      });
+      setFieldErrors(formattedErrors);
+      setGlobalError('Please fix the validation errors below.');
+      return;
+    }
+
     setLoading(true);
 
     const result = await signIn('credentials', {
@@ -81,7 +170,7 @@ export default function AdminLoginPage() {
     setLoading(false);
 
     if (!result || result.error) {
-      setError('Invalid email or password. Please try again.');
+      setGlobalError('Invalid administrator email or password. Please try again.');
       return;
     }
 
@@ -104,10 +193,15 @@ export default function AdminLoginPage() {
       badgeText="ADMIN PORTAL"
       formMaxWidth={440}
     >
-      {error && (
+      <Suspense fallback={null}>
+        <AdminStatusAlerts />
+      </Suspense>
+
+      {globalError && (
         <Alert
           severity="error"
           variant="filled"
+          onClose={() => setGlobalError('')}
           sx={{
             mb: 3,
             borderRadius: 2.5,
@@ -115,7 +209,7 @@ export default function AdminLoginPage() {
             fontSize: '0.875rem',
           }}
         >
-          {error}
+          {globalError}
         </Alert>
       )}
 
@@ -132,50 +226,85 @@ export default function AdminLoginPage() {
           fullWidth
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => handleEmailChange(e.target.value)}
+          error={Boolean(fieldErrors.email)}
+          helperText={fieldErrors.email}
           variant="outlined"
           slotProps={{
+            htmlInput: {
+              maxLength: 100,
+            },
+            formHelperText: {
+              sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+            },
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailIcon sx={{ color: '#6366F1' }} />
+                  <EmailIcon sx={{ color: fieldErrors.email ? '#EE5D50' : '#6366F1' }} />
                 </InputAdornment>
               ),
             },
           }}
         />
 
-        <TextField
-          id="admin-password"
-          label="Password"
-          type={showPassword ? 'text' : 'password'}
-          fullWidth
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          variant="outlined"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon sx={{ color: '#6366F1' }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                    sx={{ color: '#94A3B8' }}
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <TextField
+            id="admin-password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            fullWidth
+            required
+            value={password}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            error={Boolean(fieldErrors.password)}
+            helperText={fieldErrors.password}
+            variant="outlined"
+            slotProps={{
+              htmlInput: {
+                maxLength: 64,
+              },
+              formHelperText: {
+                sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+              },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon sx={{ color: fieldErrors.password ? '#EE5D50' : '#6366F1' }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: '#94A3B8' }}
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 0.5 }}>
+            <Typography
+              component={Link}
+              href="/admin/forgot-password"
+              variant="body2"
+              sx={{
+                color: '#6366F1',
+                fontWeight: 600,
+                fontSize: '0.8125rem',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              Forgot Password?
+            </Typography>
+          </Box>
+        </Box>
 
         <Button
           id="admin-submit-btn"
