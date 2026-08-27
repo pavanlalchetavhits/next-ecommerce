@@ -134,12 +134,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/products?sort=latest" className="hover:text-indigo-400 transition-colors">
-                  New Arrivals
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?featured=true" className="hover:text-indigo-400 transition-colors">
+                <Link href="/deals" className="hover:text-indigo-400 transition-colors">
                   Featured Deals
                 </Link>
               </li>

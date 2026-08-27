@@ -24,9 +24,14 @@ export async function getProducts(filters: ProductFilters = {}) {
     queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
   }
 
-  if (filters.category_id && !isNaN(Number(filters.category_id))) {
-    whereClauses.push('p.category_id = ?');
-    queryParams.push(Number(filters.category_id));
+  if (filters.category_id !== undefined && filters.category_id !== null && filters.category_id !== '') {
+    if (!isNaN(Number(filters.category_id))) {
+      whereClauses.push('p.category_id = ?');
+      queryParams.push(Number(filters.category_id));
+    } else {
+      whereClauses.push('(c.slug = ? OR c.name = ?)');
+      queryParams.push(filters.category_id, filters.category_id);
+    }
   }
 
   if (filters.featured) {

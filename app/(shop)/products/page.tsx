@@ -1,17 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import {
   Search,
-  Filter,
-  ArrowUpDown,
   RotateCcw,
   Sparkles,
   PackageX,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import ProductCard from "@/components/user/ProductCard";
 import Pagination from "@/components/ui/Pagination";
@@ -33,6 +30,7 @@ type Product = {
 type Category = {
   id: number;
   name: string;
+  slug?: string;
 };
 
 type PaginationInfo = {
@@ -42,16 +40,20 @@ type PaginationInfo = {
   totalPages: number;
 };
 
-export default function ProductsPage() {
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Read URL search params directly as single source of truth
+  const currentCategory = searchParams.get("category") || "";
+  const currentSearch = searchParams.get("search") || "";
+  const currentSort = searchParams.get("sort") || "latest";
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [sort, setSort] = useState("latest");
-
-  // Pagination state
-  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
     page: 1,
@@ -59,106 +61,150 @@ export default function ProductsPage() {
     totalPages: 1,
   });
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  async function FetchProducts() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const params = new URLSearchParams();
-
-      if (search.trim()) {
-        params.set("search", search.trim());
-      }
-      if (category) {
-        params.set("category", category);
-      }
-      if (sort) {
-        params.set("sort", sort);
-      }
-
-      params.set("page", String(page));
-      params.set("limit", "12");
-
-      const response = await axios.get(`/api/products?${params.toString()}`);
-
-      const dataArray = Array.isArray(response.data?.data)
-        ? response.data.data
-        : Array.isArray(response.data?.products)
-        ? response.data.products
-        : Array.isArray(response.data)
-        ? response.data
-        : [];
-
-      setProducts(dataArray);
-
-      if (response.data?.pagination) {
-        setPagination(response.data.pagination);
-      } else {
-        setPagination({
-          total: dataArray.length,
-          page: 1,
-          limit: 12,
-          totalPages: 1,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch products"
-      );
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function fetchCategories() {
-    try {
-      const response = await axios.get("/api/categories");
-      const catArray = Array.isArray(response.data?.data)
-        ? response.data.data
-        : Array.isArray(response.data?.categories)
-        ? response.data.categories
-        : Array.isArray(response.data)
-        ? response.data
-        : [];
-      setCategories(catArray);
-    } catch (err) {
-      console.error("Category Fetch Error:", err);
-      setCategories([]);
-    }
-  }
-
-  // Fetch when filters or page change
-  useEffect(() => {
-    FetchProducts();
-  }, [category, sort, page]);
+  // Local state for search text input so user can type freely before submitting
+  const [searchInput, setSearchInput] = useState(currentSearch);
 
   useEffect(() => {
+    setSearchInput(currentSearch);
+  }, [currentSearch]);
+
+  // Helper to update URL search params
+  const updateUrlFilters = (updates: {
+    category?: string;
+    search?: string;
+    sort?: string;
+    page?: number;
+  }) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (updates.category !== undefined) {
+      if (updates.category) params.set("category", updates.category);
+      else params.delete("category");
+    }
+
+    if (updates.search !== undefined) {
+      if (updates.search.trim()) params.set("search", updates.search.trim());
+      else params.delete("search");
+    }
+
+    if (updates.sort !== undefined) {
+      if (updates.sort && updates.sort !== "latest") params.set("sort", updates.sort);
+      else params.delete("sort");
+    }
+
+    if (updates.page !== undefined) {
+      if (updates.page > 1) params.set("page", String(updates.page));
+      else params.delete("page");
+    } else {
+      // Reset page to 1 whenever filters change
+      params.delete("page");
+    }
+
+    const queryString = params.toString();
+    router.replace(queryString ? `/products?${queryString}` : "/products", { scroll: false });
+  };
+
+  // Fetch categories list once
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const response = await axios.get("/api/categories");
+        const catArray = Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data?.categories)
+          ? response.data.categories
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
+        setCategories(catArray);
+      } catch (err) {
+        console.error("Category Fetch Error:", err);
+        setCategories([]);
+      }
+    }
     fetchCategories();
   }, []);
 
-  function handleReset() {
-    setSearch("");
-    setCategory("");
-    setSort("latest");
-    setPage(1);
-  }
+  // Fetch products whenever URL parameters change
+  useEffect(() => {
+    async function FetchProducts() {
+      try {
+        setLoading(true);
+        setError("");
 
-  function handleCategoryChange(val: string) {
-    setCategory(val);
-    setPage(1);
-  }
+        const params = new URLSearchParams();
 
-  function handleSortChange(val: string) {
-    setSort(val);
-    setPage(1);
-  }
+        if (currentSearch.trim()) {
+          params.set("search", currentSearch.trim());
+        }
+        if (currentCategory) {
+          params.set("category", currentCategory);
+        }
+        if (currentSort && currentSort !== "latest") {
+          params.set("sort", currentSort);
+        }
 
-  const isFiltered = search.trim() !== "" || category !== "" || sort !== "latest";
+        params.set("page", String(currentPage));
+        params.set("limit", "12");
+
+        const response = await axios.get(`/api/products?${params.toString()}`);
+
+        const dataArray = Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data?.products)
+          ? response.data.products
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        setProducts(dataArray);
+
+        if (response.data?.pagination) {
+          setPagination(response.data.pagination);
+        } else {
+          setPagination({
+            total: dataArray.length,
+            page: currentPage,
+            limit: 12,
+            totalPages: 1,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch products"
+        );
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    FetchProducts();
+  }, [currentCategory, currentSearch, currentSort, currentPage]);
+
+  const handleReset = () => {
+    setSearchInput("");
+    router.replace("/products", { scroll: false });
+  };
+
+  const handleCategoryChange = (val: string) => {
+    updateUrlFilters({ category: val });
+  };
+
+  const handleSortChange = (val: string) => {
+    updateUrlFilters({ sort: val });
+  };
+
+  const handleSearchSubmit = () => {
+    updateUrlFilters({ search: searchInput });
+  };
+
+  const isFiltered = currentSearch !== "" || currentCategory !== "" || currentSort !== "latest" || currentPage > 1;
+
+  const activeCategoryObject = categories.find(
+    (c) => String(c.id) === String(currentCategory) || c.slug === currentCategory || c.name === currentCategory
+  );
 
   const categoryOptions = [
     { value: "", label: "All Categories" },
@@ -180,13 +226,17 @@ export default function ProductsPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3 py-1 text-xs font-bold text-[#5b46f6] mb-3">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>NexCart Catalog</span>
+            <span>
+              {activeCategoryObject ? activeCategoryObject.name : "NexCart Catalog"}
+            </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 font-display">
-            Explore Our Collection
+            {activeCategoryObject ? `${activeCategoryObject.name} Collection` : "Explore Our Collection"}
           </h1>
           <p className="mt-2 text-sm text-slate-600 max-w-xl">
-            Discover premium gadgets, wearables, home essentials & lifestyle products.
+            {activeCategoryObject
+              ? `Browse high-quality products under ${activeCategoryObject.name}.`
+              : "Discover premium gadgets, wearables, home essentials & lifestyle products."}
           </p>
         </div>
 
@@ -195,7 +245,7 @@ export default function ProductsPage() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs border border-purple-100">
               <span className="h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-              {pagination.total} Products Total
+              {pagination.total} {pagination.total === 1 ? "Product" : "Products"} Total
             </span>
           </div>
         )}
@@ -210,12 +260,11 @@ export default function ProductsPage() {
             <TextField
               size="small"
               placeholder="Search by product name, model, or keyword..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  setPage(1);
-                  FetchProducts();
+                  handleSearchSubmit();
                 }
               }}
               fullWidth
@@ -226,14 +275,13 @@ export default function ProductsPage() {
                       <Search className="h-4 w-4 text-slate-400" />
                     </InputAdornment>
                   ),
-                  endAdornment: search ? (
+                  endAdornment: searchInput ? (
                     <InputAdornment position="end">
                       <button
                         type="button"
                         onClick={() => {
-                          setSearch("");
-                          setPage(1);
-                          setTimeout(() => FetchProducts(), 0);
+                          setSearchInput("");
+                          updateUrlFilters({ search: "" });
                         }}
                         className="text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
@@ -267,7 +315,7 @@ export default function ProductsPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="sm:w-48">
               <MuiSelect
-                value={category}
+                value={currentCategory}
                 onChange={(e) => handleCategoryChange(String(e.target.value))}
                 options={categoryOptions}
                 fullWidth
@@ -276,7 +324,7 @@ export default function ProductsPage() {
 
             <div className="sm:w-48">
               <MuiSelect
-                value={sort}
+                value={currentSort}
                 onChange={(e) => handleSortChange(String(e.target.value))}
                 options={sortOptions}
                 fullWidth
@@ -288,10 +336,7 @@ export default function ProductsPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
-                setPage(1);
-                FetchProducts();
-              }}
+              onClick={handleSearchSubmit}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#5b46f6] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 hover:bg-[#4a36e3] active:scale-95 transition-all flex-1 sm:flex-none cursor-pointer"
             >
               <Search className="h-4 w-4" />
@@ -340,7 +385,9 @@ export default function ProductsPage() {
           </div>
           <h2 className="text-lg font-bold text-slate-900">No Products Found</h2>
           <p className="mt-1 text-xs text-slate-500">
-            We couldn't find any products matching your filters.
+            {currentCategory
+              ? "No products are currently available in this category."
+              : "We couldn't find any products matching your filters."}
           </p>
           <button
             type="button"
@@ -362,17 +409,31 @@ export default function ProductsPage() {
 
           {/* Reusable Pagination Component */}
           <Pagination
-            currentPage={page}
+            currentPage={currentPage}
             totalPages={pagination.totalPages}
             totalItems={pagination.total}
             itemsPerPage={pagination.limit}
             onPageChange={(newPage) => {
-              setPage(newPage);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              updateUrlFilters({ page: newPage });
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           />
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-7xl px-4 py-12 text-center text-sm text-slate-500">
+          Loading products catalog...
+        </div>
+      }
+    >
+      <ProductsContent />
+    </Suspense>
   );
 }

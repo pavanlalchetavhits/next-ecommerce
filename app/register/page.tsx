@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import SplitAuthLayout from '@/components/auth/SplitAuthLayout';
 import api from '@/lib/axios';
+import { registerFormSchema } from '@/lib/validations/user';
 
 function PersonIcon(props: SvgIconProps) {
   return (
@@ -74,6 +75,14 @@ function PersonAddIcon(props: SvgIconProps) {
   );
 }
 
+type FieldErrors = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+};
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -88,28 +97,62 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [error, setError] = useState('');
+  const [globalError, setGlobalError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
 
+  // Auto-dismiss global error message after 5 seconds
+  useEffect(() => {
+    if (globalError) {
+      const timer = setTimeout(() => {
+        setGlobalError('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [globalError]);
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({
-      ...form,
-      [event.target.name]: event.target.value,
-    });
+    const { name, value } = event.target;
+    
+    // For full name field, strictly allow letters and spaces only
+    let sanitizedValue = value;
+    if (name === 'name') {
+      sanitizedValue = value.replace(/[^a-zA-Z\s]/g, '');
+    } else if (name === 'phone') {
+      sanitizedValue = value.replace(/\D/g, '');
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: sanitizedValue,
+    }));
+
+    if (fieldErrors[name as keyof FieldErrors]) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setGlobalError('');
+    setFieldErrors({});
 
-    setError('');
+    // Client-side Zod validation
+    const validationResult = registerFormSchema.safeParse(form);
 
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    if (!validationResult.success) {
+      const formattedErrors: FieldErrors = {};
+      validationResult.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0] as keyof FieldErrors;
+        if (fieldName && !formattedErrors[fieldName]) {
+          formattedErrors[fieldName] = issue.message;
+        }
+      });
+      setFieldErrors(formattedErrors);
+      setGlobalError('Please fix the errors highlighted below to create your account.');
       return;
     }
 
@@ -117,9 +160,9 @@ export default function RegisterPage() {
 
     try {
       const response = await api.post('/api/auth/register', {
-        name: form.name,
-        email: form.email,
-        phone: form.phone || undefined,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || undefined,
         password: form.password,
       });
 
@@ -127,10 +170,14 @@ export default function RegisterPage() {
         router.push('/login?registered=true');
       }
     } catch (err: any) {
-      const msg =
-        err.response?.data?.message ||
-        'Registration failed. Please try again.';
-      setError(msg);
+      if (err.response?.status === 409) {
+        const msg = 'This email address is already registered. Please sign in instead.';
+        setGlobalError(msg);
+        setFieldErrors((prev) => ({ ...prev, email: 'Email address already in use' }));
+      } else {
+        const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+        setGlobalError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -151,10 +198,11 @@ export default function RegisterPage() {
       badgeText="JOIN US TODAY"
       formMaxWidth={500}
     >
-      {error && (
+      {globalError && (
         <Alert
           severity="error"
           variant="filled"
+          onClose={() => setGlobalError('')}
           sx={{
             mb: 3,
             borderRadius: 2.5,
@@ -162,7 +210,7 @@ export default function RegisterPage() {
             fontSize: '0.875rem',
           }}
         >
-          {error}
+          {globalError}
         </Alert>
       )}
 
@@ -185,12 +233,20 @@ export default function RegisterPage() {
               required
               value={form.name}
               onChange={handleChange}
+              error={Boolean(fieldErrors.name)}
+              helperText={fieldErrors.name}
               variant="outlined"
               slotProps={{
+                htmlInput: {
+                  maxLength: 50,
+                },
+                formHelperText: {
+                  sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+                },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PersonIcon sx={{ color: '#6366F1' }} />
+                      <PersonIcon sx={{ color: fieldErrors.name ? '#EE5D50' : '#6366F1' }} />
                     </InputAdornment>
                   ),
                 },
@@ -202,17 +258,25 @@ export default function RegisterPage() {
             <TextField
               id="register-phone"
               name="phone"
-              label="Phone Number"
+              label="Phone Number (Optional)"
               type="tel"
               fullWidth
               value={form.phone}
               onChange={handleChange}
+              error={Boolean(fieldErrors.phone)}
+              helperText={fieldErrors.phone}
               variant="outlined"
               slotProps={{
+                htmlInput: {
+                  maxLength: 10,
+                },
+                formHelperText: {
+                  sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+                },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PhoneIcon sx={{ color: '#6366F1' }} />
+                      <PhoneIcon sx={{ color: fieldErrors.phone ? '#EE5D50' : '#6366F1' }} />
                     </InputAdornment>
                   ),
                 },
@@ -231,12 +295,20 @@ export default function RegisterPage() {
               required
               value={form.email}
               onChange={handleChange}
+              error={Boolean(fieldErrors.email)}
+              helperText={fieldErrors.email}
               variant="outlined"
               slotProps={{
+                htmlInput: {
+                  maxLength: 100,
+                },
+                formHelperText: {
+                  sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+                },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <EmailIcon sx={{ color: '#6366F1' }} />
+                      <EmailIcon sx={{ color: fieldErrors.email ? '#EE5D50' : '#6366F1' }} />
                     </InputAdornment>
                   ),
                 },
@@ -255,12 +327,20 @@ export default function RegisterPage() {
               required
               value={form.password}
               onChange={handleChange}
+              error={Boolean(fieldErrors.password)}
+              helperText={fieldErrors.password}
               variant="outlined"
               slotProps={{
+                htmlInput: {
+                  maxLength: 64,
+                },
+                formHelperText: {
+                  sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+                },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockIcon sx={{ color: '#6366F1' }} />
+                      <LockIcon sx={{ color: fieldErrors.password ? '#EE5D50' : '#6366F1' }} />
                     </InputAdornment>
                   ),
                   endAdornment: (
@@ -290,12 +370,20 @@ export default function RegisterPage() {
               required
               value={form.confirmPassword}
               onChange={handleChange}
+              error={Boolean(fieldErrors.confirmPassword)}
+              helperText={fieldErrors.confirmPassword}
               variant="outlined"
               slotProps={{
+                htmlInput: {
+                  maxLength: 64,
+                },
+                formHelperText: {
+                  sx: { whiteSpace: 'nowrap', fontSize: '0.75rem', mx: 0.5 },
+                },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockIcon sx={{ color: '#6366F1' }} />
+                      <LockIcon sx={{ color: fieldErrors.confirmPassword ? '#EE5D50' : '#6366F1' }} />
                     </InputAdornment>
                   ),
                   endAdornment: (
