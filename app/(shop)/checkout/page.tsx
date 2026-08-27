@@ -23,6 +23,7 @@ import {
   Building,
   AlertCircle,
   CheckCircle2,
+  User,
 } from "lucide-react";
 
 import axios from "axios";
@@ -366,6 +367,12 @@ export default function CheckoutPage() {
   async function handlePlaceOrder() {
     setError("");
 
+    if (sessionStatus !== "authenticated" || !session?.user) {
+      setError("Please sign in to place an order.");
+      router.push("/login?callbackUrl=/checkout");
+      return;
+    }
+
     if (items.length === 0) {
       setError("Your cart is empty.");
       return;
@@ -504,6 +511,37 @@ export default function CheckoutPage() {
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-600 shadow-2xs">
             ⚠️ {error}
+          </div>
+        )}
+
+        {/* Sign-in Required Banner for Unauthenticated Users */}
+        {sessionStatus !== "loading" && !session?.user && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-2xs space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 shrink-0">
+                <User className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-amber-900">Sign In Required to Place Order</h3>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  You are currently browsing as a guest. Please sign in or create an account to complete your purchase.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <Link
+                href="/login?callbackUrl=/checkout"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b46f6] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#4338ca] transition-all"
+              >
+                <span>Sign In to Continue</span>
+              </Link>
+              <Link
+                href="/register?callbackUrl=/checkout"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-4 py-2 text-xs font-bold text-amber-900 hover:bg-amber-100 transition-all"
+              >
+                <span>Create Account</span>
+              </Link>
+            </div>
           </div>
         )}
 

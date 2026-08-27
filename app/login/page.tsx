@@ -230,6 +230,7 @@ export default function LoginPage() {
         <TextField
           id="customer-email"
           label="Email Address"
+          placeholder="name@example.com"
           type="email"
           fullWidth
           required
@@ -259,6 +260,7 @@ export default function LoginPage() {
           <TextField
             id="customer-password"
             label="Password"
+            placeholder="Enter your password"
             type={showPassword ? 'text' : 'password'}
             fullWidth
             required

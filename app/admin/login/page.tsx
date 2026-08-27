@@ -222,6 +222,7 @@ export default function AdminLoginPage() {
         <TextField
           id="admin-email"
           label="Email Address"
+          placeholder="admin@example.com"
           type="email"
           fullWidth
           required
@@ -251,6 +252,7 @@ export default function AdminLoginPage() {
           <TextField
             id="admin-password"
             label="Password"
+            placeholder="Enter admin password"
             type={showPassword ? 'text' : 'password'}
             fullWidth
             required

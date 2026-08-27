@@ -809,7 +809,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {orders.map((ord) => {
+                  {orders.slice(0, 10).map((ord) => {
                     const statusColor =
                       ord.status === 'delivered'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'

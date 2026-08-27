@@ -38,6 +38,32 @@ export default function Navbar() {
   const wishlistCount = useWishlistStore((state) => state.count);
   const fetchWishlist = useWishlistStore((state) => state.fetchWishlist);
 
+  const [activeCoupons, setActiveCoupons] = useState<any[]>([]);
+  const [couponIndex, setCouponIndex] = useState(0);
+
+  useEffect(() => {
+    async function fetchCoupons() {
+      try {
+        const res = await fetch(`/api/coupons?status=active&t=${Date.now()}`);
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setActiveCoupons(data.data);
+        }
+      } catch (err) {
+        console.error('Navbar coupon fetch error:', err);
+      }
+    }
+    fetchCoupons();
+  }, []);
+
+  useEffect(() => {
+    if (activeCoupons.length <= 1) return;
+    const timer = setInterval(() => {
+      setCouponIndex((prev) => (prev + 1) % activeCoupons.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [activeCoupons]);
+
   useEffect(() => {
     fetchWishlist();
   }, [fetchWishlist]);
@@ -77,9 +103,25 @@ export default function Navbar() {
               Free Express Shipping on orders over <strong className="text-indigo-400 font-bold">$150</strong>
             </span>
             <span className="hidden md:inline-block text-slate-500">•</span>
-            <span className="hidden md:flex items-center gap-1 text-emerald-400">
-              <Tag className="w-3 h-3" /> Use code <strong>SAVE10</strong> for 10% OFF
-            </span>
+            {activeCoupons.length > 0 ? (
+              <span className="hidden md:flex items-center gap-1 text-emerald-400 transition-all duration-300">
+                <Tag className="w-3 h-3 text-emerald-400" /> Use code{' '}
+                <strong className="font-extrabold uppercase text-amber-300">
+                  {activeCoupons[couponIndex]?.code}
+                </strong>{' '}
+                for{' '}
+                <span className="font-bold">
+                  {activeCoupons[couponIndex]?.discount_type === 'percentage'
+                    ? `${Number(activeCoupons[couponIndex]?.discount_value)}% OFF`
+                    : `₹${Number(activeCoupons[couponIndex]?.discount_value)} OFF`}
+                </span>
+              </span>
+            ) : (
+              <span className="hidden md:flex items-center gap-1 text-emerald-400">
+                <Tag className="w-3 h-3 text-emerald-400" /> Use code{' '}
+                <strong className="font-extrabold uppercase text-amber-300">WELCOME10</strong> for 10% OFF
+              </span>
+            )}
           </div>
 
           <div className="hidden sm:flex items-center gap-5 text-slate-300">

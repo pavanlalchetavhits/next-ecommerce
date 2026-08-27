@@ -86,7 +86,7 @@ export default function DealsPage() {
         setLoading(true);
         const [prodRes, couponRes] = await Promise.allSettled([
           axios.get('/api/products'),
-          axios.get('/api/coupons?status=active'),
+          axios.get(`/api/coupons?status=active&t=${Date.now()}`),
         ]);
 
         if (prodRes.status === 'fulfilled') {
@@ -242,12 +242,12 @@ export default function DealsPage() {
                   <div>
                     <h3 className="text-xl font-extrabold text-white font-display">
                       {featuredCoupon.discount_type === 'percentage'
-                        ? `Extra ${featuredCoupon.discount_value}% Instant OFF`
-                        : `Extra ₹${featuredCoupon.discount_value} Instant OFF`}
+                        ? `Extra ${Number(featuredCoupon.discount_value)}% Instant OFF`
+                        : `Extra ₹${Number(featuredCoupon.discount_value).toLocaleString('en-IN')} Instant OFF`}
                     </h3>
                     <p className="text-xs text-slate-300 mt-1">
                       {featuredCoupon.description ||
-                        `Apply code at checkout on orders over ₹${featuredCoupon.minimum_order_amount || 0}.`}
+                        `Apply code at checkout on orders over ₹${Number(featuredCoupon.minimum_order_amount || 0).toLocaleString('en-IN')}.`}
                     </p>
                   </div>
 
@@ -324,8 +324,8 @@ export default function DealsPage() {
                     <div className="flex items-center justify-between">
                       <span className="rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-extrabold text-[#5b46f6] border border-purple-100">
                         {coupon.discount_type === 'percentage'
-                          ? `${coupon.discount_value}% OFF`
-                          : `₹${coupon.discount_value} OFF`}
+                          ? `${Number(coupon.discount_value)}% OFF`
+                          : `₹${Number(coupon.discount_value).toLocaleString('en-IN')} OFF`}
                       </span>
                       <button
                         type="button"
@@ -497,8 +497,8 @@ export default function DealsPage() {
                     </span>
                     <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-extrabold text-emerald-700 border border-emerald-200">
                       {tcModalCoupon.discount_type === 'percentage'
-                        ? `${tcModalCoupon.discount_value}% OFF`
-                        : `₹${tcModalCoupon.discount_value} OFF`}
+                        ? `${Number(tcModalCoupon.discount_value)}% OFF`
+                        : `₹${Number(tcModalCoupon.discount_value).toLocaleString('en-IN')} OFF`}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-medium">Terms & Conditions of Offer</p>
@@ -522,8 +522,8 @@ export default function DealsPage() {
                   <div>
                     <span className="font-bold text-slate-900">Discount Offer:</span>{' '}
                     {tcModalCoupon.discount_type === 'percentage'
-                      ? `Enjoy ${tcModalCoupon.discount_value}% instant discount on your cart total.`
-                      : `Enjoy flat ₹${tcModalCoupon.discount_value} cash discount on your order.`}
+                      ? `Enjoy ${Number(tcModalCoupon.discount_value)}% instant discount on your cart total.`
+                      : `Enjoy flat ₹${Number(tcModalCoupon.discount_value).toLocaleString('en-IN')} cash discount on your order.`}
                   </div>
                 </div>
 
@@ -532,7 +532,7 @@ export default function DealsPage() {
                   <div>
                     <span className="font-bold text-slate-900">Minimum Order Requirement:</span>{' '}
                     {tcModalCoupon.minimum_order_amount && Number(tcModalCoupon.minimum_order_amount) > 0
-                      ? `Requires a minimum order value of ₹${tcModalCoupon.minimum_order_amount}.`
+                      ? `Requires a minimum order value of ₹${Number(tcModalCoupon.minimum_order_amount).toLocaleString('en-IN')}.`
                       : 'No minimum order amount required.'}
                   </div>
                 </div>
@@ -542,7 +542,7 @@ export default function DealsPage() {
                     <CheckCircle2 className="h-4 w-4 text-[#5b46f6] shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold text-slate-900">Maximum Discount Cap:</span>{' '}
-                      Maximum savings capped at ₹{tcModalCoupon.maximum_discount_amount} per transaction.
+                      Maximum savings capped at ₹{Number(tcModalCoupon.maximum_discount_amount).toLocaleString('en-IN')} per transaction.
                     </div>
                   </div>
                 )}

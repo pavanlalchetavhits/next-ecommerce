@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createCoupon, getCoupons, getDealsCouponsWithUserUsage } from '@/services/coupon.service';
 import { auth } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -152,10 +154,17 @@ export async function GET(request: Request) {
 
     if (status === 'active' && !search) {
       const dealsCoupons = await getDealsCouponsWithUserUsage(userId);
-      return NextResponse.json({
-        success: true,
-        data: dealsCoupons,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          data: dealsCoupons,
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        }
+      );
     }
 
     const coupons = await getCoupons({
@@ -163,10 +172,17 @@ export async function GET(request: Request) {
       status: status || undefined,
     });
 
-    return NextResponse.json({
-      success: true,
-      data: coupons,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: coupons,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('Get coupons error:', error);
 
