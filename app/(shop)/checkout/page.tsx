@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 
 import axios from "axios";
+import MuiSelect from "@/components/ui/MuiSelect";
+import { INDIAN_STATES_AND_DISTRICTS, StateItem } from "@/lib/data/indianStatesDistricts";
 
 type Address = {
   id: number;
@@ -685,37 +687,127 @@ export default function CheckoutPage() {
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
                   />
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <input
-                      type="text"
-                      placeholder="City *"
-                      value={newAddress.city}
-                      onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="State *"
-                      value={newAddress.state}
-                      onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
-                      required
-                    />
-                    <input
-                      type="text"
-                      maxLength={6}
-                      placeholder="Pincode * (6 digits)"
-                      value={newAddress.postal_code}
-                      onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          postal_code: e.target.value.replace(/\D/g, "").slice(0, 6),
-                        })
-                      }
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6]"
-                      required
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* State Selector */}
+                    <div>
+                      {(() => {
+                        const stateOptions = [
+                          { value: "", label: "Select State *" },
+                          ...INDIAN_STATES_AND_DISTRICTS.map((s: StateItem) => ({
+                            value: s.state,
+                            label: s.state,
+                          })),
+                        ];
+
+                        if (
+                          newAddress.state &&
+                          !stateOptions.some(
+                            (opt) => opt.value.toLowerCase() === newAddress.state.toLowerCase()
+                          )
+                        ) {
+                          stateOptions.splice(1, 0, {
+                            value: newAddress.state,
+                            label: newAddress.state,
+                          });
+                        }
+
+                        return (
+                          <MuiSelect
+                            value={newAddress.state}
+                            onChange={(e) => {
+                              const selectedState = String(e.target.value);
+                              setNewAddress({
+                                ...newAddress,
+                                state: selectedState,
+                                city: "",
+                              });
+                            }}
+                            options={stateOptions}
+                          />
+                        );
+                      })()}
+                    </div>
+
+                    {/* City / District Selector based on selected State */}
+                    <div>
+                      {(() => {
+                        const matchedState = INDIAN_STATES_AND_DISTRICTS.find(
+                          (s: StateItem) => s.state.toLowerCase() === (newAddress.state || "").toLowerCase()
+                        );
+                        const districts = matchedState ? matchedState.districts : [];
+
+                        if (districts.length > 0) {
+                          const cityOptions = [
+                            {
+                              value: "",
+                              label: "Select City / District *",
+                            },
+                            ...districts.map((d: string) => ({ value: d, label: d })),
+                          ];
+
+                          if (
+                            newAddress.city &&
+                            !cityOptions.some(
+                              (opt) => opt.value.toLowerCase() === newAddress.city.toLowerCase()
+                            )
+                          ) {
+                            cityOptions.splice(1, 0, {
+                              value: newAddress.city,
+                              label: newAddress.city,
+                            });
+                          }
+
+                          return (
+                            <MuiSelect
+                              value={newAddress.city}
+                              disabled={!newAddress.state}
+                              onChange={(e) => setNewAddress({ ...newAddress, city: String(e.target.value) })}
+                              options={cityOptions}
+                            />
+                          );
+                        }
+
+                        if (!newAddress.state) {
+                          return (
+                            <MuiSelect
+                              value=""
+                              disabled
+                              onChange={() => {}}
+                              options={[{ value: "", label: "Select State First *" }]}
+                            />
+                          );
+                        }
+
+                        return (
+                          <input
+                            type="text"
+                            placeholder="City *"
+                            value={newAddress.city}
+                            onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6] font-semibold text-slate-800"
+                            required
+                          />
+                        );
+                      })()}
+                    </div>
+
+                    {/* Pincode Input */}
+                    <div>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="Pincode * (6 digits)"
+                        value={newAddress.postal_code}
+                        onChange={(e) =>
+                          setNewAddress({
+                            ...newAddress,
+                            postal_code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                          })
+                        }
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#5b46f6] font-semibold text-slate-800"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 pt-1">

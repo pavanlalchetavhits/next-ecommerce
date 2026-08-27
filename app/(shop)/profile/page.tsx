@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useWishlistStore } from '@/app/store/wishliststore';
 import MuiSelect from '@/components/ui/MuiSelect';
+import { INDIAN_STATES_AND_DISTRICTS, StateItem } from '@/lib/data/indianStatesDistricts';
 
 type Profile = {
   id: number;
@@ -1153,33 +1154,111 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    value={addrCity}
-                    onChange={(e) => setAddrCity(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
-                    placeholder="City"
-                  />
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* State Dropdown */}
                 <div>
                   <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                     State *
                   </label>
-                  <input
-                    type="text"
-                    value={addrState}
-                    onChange={(e) => setAddrState(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
-                    placeholder="State"
-                  />
+                  {(() => {
+                    const stateOptions = [
+                      { value: '', label: 'Select State *' },
+                      ...INDIAN_STATES_AND_DISTRICTS.map((s: StateItem) => ({
+                        value: s.state,
+                        label: s.state,
+                      })),
+                    ];
+
+                    if (
+                      addrState &&
+                      !stateOptions.some(
+                        (opt) => opt.value.toLowerCase() === addrState.toLowerCase()
+                      )
+                    ) {
+                      stateOptions.splice(1, 0, {
+                        value: addrState,
+                        label: addrState,
+                      });
+                    }
+
+                    return (
+                      <MuiSelect
+                        value={addrState}
+                        onChange={(e) => {
+                          const selectedState = String(e.target.value);
+                          setAddrState(selectedState);
+                          setAddrCity('');
+                        }}
+                        options={stateOptions}
+                      />
+                    );
+                  })()}
+                </div>
+
+                {/* City / District Dropdown based on State */}
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                    City / District *
+                  </label>
+                  {(() => {
+                    const matchedState = INDIAN_STATES_AND_DISTRICTS.find(
+                      (s: StateItem) => s.state.toLowerCase() === (addrState || '').toLowerCase()
+                    );
+                    const districts = matchedState ? matchedState.districts : [];
+
+                    if (districts.length > 0) {
+                      const cityOptions = [
+                        {
+                          value: '',
+                          label: 'Select City / District *',
+                        },
+                        ...districts.map((d: string) => ({ value: d, label: d })),
+                      ];
+
+                      if (
+                        addrCity &&
+                        !cityOptions.some(
+                          (opt) => opt.value.toLowerCase() === addrCity.toLowerCase()
+                        )
+                      ) {
+                        cityOptions.splice(1, 0, {
+                          value: addrCity,
+                          label: addrCity,
+                        });
+                      }
+
+                      return (
+                        <MuiSelect
+                          value={addrCity}
+                          disabled={!addrState}
+                          onChange={(e) => setAddrCity(String(e.target.value))}
+                          options={cityOptions}
+                        />
+                      );
+                    }
+
+                    if (!addrState) {
+                      return (
+                        <MuiSelect
+                          value=""
+                          disabled
+                          onChange={() => {}}
+                          options={[{ value: '', label: 'Select State First *' }]}
+                        />
+                      );
+                    }
+
+                    return (
+                      <input
+                        type="text"
+                        value={addrCity}
+                        onChange={(e) => setAddrCity(e.target.value)}
+                        required
+                        className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none"
+                        placeholder="City"
+                      />
+                    );
+                  })()}
                 </div>
               </div>
 

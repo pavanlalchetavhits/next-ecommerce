@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { MapPin, Home, Briefcase, Plus, Check, Phone, User, Building, Compass, Hash, Globe, FileText } from 'lucide-react';
 import MuiSelect from '@/components/ui/MuiSelect';
+import { INDIAN_STATES_AND_DISTRICTS, StateItem } from '@/lib/data/indianStatesDistricts';
 
 const COUNTRY_OPTIONS = [
   { value: 'United States', label: 'United States' },
@@ -243,34 +244,113 @@ export default function ShippingAddressForm({ address, onChange }: ShippingAddre
               </div>
             </div>
 
-            {/* City */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                City
-              </label>
-              <input
-                type="text"
-                value={address.city}
-                onChange={(e) => handleCustomFormChange('city', e.target.value)}
-                placeholder="e.g. San Francisco"
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition-all"
-                required
-              />
-            </div>
-
             {/* State */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 State / Province
               </label>
-              <input
-                type="text"
-                value={address.state}
-                onChange={(e) => handleCustomFormChange('state', e.target.value)}
-                placeholder="e.g. California"
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition-all"
-                required
-              />
+              {(() => {
+                const stateOptions = [
+                  { value: '', label: 'Select State *' },
+                  ...INDIAN_STATES_AND_DISTRICTS.map((s: StateItem) => ({
+                    value: s.state,
+                    label: s.state,
+                  })),
+                ];
+
+                if (
+                  address.state &&
+                  !stateOptions.some(
+                    (opt) => opt.value.toLowerCase() === address.state.toLowerCase()
+                  )
+                ) {
+                  stateOptions.splice(1, 0, {
+                    value: address.state,
+                    label: address.state,
+                  });
+                }
+
+                return (
+                  <MuiSelect
+                    value={address.state}
+                    onChange={(e) => {
+                      const selectedState = String(e.target.value);
+                      onChange({
+                        ...address,
+                        state: selectedState,
+                        city: '',
+                      });
+                    }}
+                    options={stateOptions}
+                  />
+                );
+              })()}
+            </div>
+
+            {/* City / District Selector based on selected State */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                City / District
+              </label>
+              {(() => {
+                const matchedState = INDIAN_STATES_AND_DISTRICTS.find(
+                  (s: StateItem) => s.state.toLowerCase() === (address.state || '').toLowerCase()
+                );
+                const districts = matchedState ? matchedState.districts : [];
+
+                if (districts.length > 0) {
+                  const cityOptions = [
+                    {
+                      value: '',
+                      label: 'Select City / District *',
+                    },
+                    ...districts.map((d: string) => ({ value: d, label: d })),
+                  ];
+
+                  if (
+                    address.city &&
+                    !cityOptions.some(
+                      (opt) => opt.value.toLowerCase() === address.city.toLowerCase()
+                    )
+                  ) {
+                    cityOptions.splice(1, 0, {
+                      value: address.city,
+                      label: address.city,
+                    });
+                  }
+
+                  return (
+                    <MuiSelect
+                      value={address.city}
+                      disabled={!address.state}
+                      onChange={(e) => handleCustomFormChange('city', String(e.target.value))}
+                      options={cityOptions}
+                    />
+                  );
+                }
+
+                if (!address.state) {
+                  return (
+                    <MuiSelect
+                      value=""
+                      disabled
+                      onChange={() => {}}
+                      options={[{ value: '', label: 'Select State First *' }]}
+                    />
+                  );
+                }
+
+                return (
+                  <input
+                    type="text"
+                    value={address.city}
+                    onChange={(e) => handleCustomFormChange('city', e.target.value)}
+                    placeholder="e.g. San Francisco"
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition-all"
+                    required
+                  />
+                );
+              })()}
             </div>
 
             {/* Postal Code */}
