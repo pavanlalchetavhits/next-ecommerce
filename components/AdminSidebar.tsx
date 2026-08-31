@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   LogOut,
   CreditCard,
+  Users,
 } from 'lucide-react';
 
 const menuItems = [
@@ -24,6 +25,11 @@ const menuItems = [
     label: 'Dashboard',
     href: '/admin/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    label: 'Customers',
+    href: '/admin/users',
+    icon: Users,
   },
   {
     label: 'Categories',
