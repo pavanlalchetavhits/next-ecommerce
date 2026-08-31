@@ -81,6 +81,7 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
   const [viewingOrder, setViewingOrder] = useState<OrderItem | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string>('');
+  const [updatingPaymentStatus, setUpdatingPaymentStatus] = useState<string>('');
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [updatingLoading, setUpdatingLoading] = useState(false);
 
@@ -144,6 +145,7 @@ export default function OrderManager({ orders }: OrderManagerProps) {
   const openOrderDetails = async (order: OrderItem) => {
     setViewingOrder(order);
     setUpdatingStatus(order.status);
+    setUpdatingPaymentStatus(order.payment_status || 'pending');
     setError('');
     setLoadingDetails(true);
 
@@ -152,6 +154,7 @@ export default function OrderManager({ orders }: OrderManagerProps) {
       if (res.data?.success && res.data?.data) {
         setViewingOrder(res.data.data);
         setUpdatingStatus(res.data.data.status);
+        setUpdatingPaymentStatus(res.data.data.payment_status || 'pending');
       }
     } catch {
       // Keep basic order data if fetch details fails
@@ -186,6 +189,39 @@ export default function OrderManager({ orders }: OrderManagerProps) {
         err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data
           ? String(err.response.data.message)
           : 'Failed to update order status';
+
+      setError(message);
+    } finally {
+      setUpdatingLoading(false);
+    }
+  };
+
+  // Submit Payment Status Update
+  const handlePaymentStatusUpdate = async (newPaymentStatus: string) => {
+    if (!viewingOrder) return;
+
+    setUpdatingLoading(true);
+    setError('');
+
+    try {
+      const res = await api.patch(`/api/orders/${viewingOrder.id}`, {
+        payment_status: newPaymentStatus,
+      });
+
+      if (res.status === 200 || res.data?.success) {
+        setSuccessMsg(`Payment status updated to "${newPaymentStatus}" for order ${viewingOrder.order_number}!`);
+        setViewingOrder((prev) =>
+          prev ? { ...prev, payment_status: newPaymentStatus as OrderItem['payment_status'] } : null
+        );
+        setUpdatingPaymentStatus(newPaymentStatus);
+        router.refresh();
+        setTimeout(() => setSuccessMsg(''), 3500);
+      }
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data
+          ? String(err.response.data.message)
+          : 'Failed to update payment status';
 
       setError(message);
     } finally {
@@ -511,10 +547,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
       {/* --- ORDER DETAILS & STATUS UPDATE MODAL --- */}
       {viewingOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150 no-scrollbar">
-          <div className="w-full max-w-2xl rounded-2xl border border-[#E9EDF7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[#E9EDF7] bg-white shadow-2xl animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-[#E9EDF7] pb-4">
+            <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E9EDF7] bg-white px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-[#6366F1]">
                   <ShoppingBag className="h-5 w-5" />
@@ -537,182 +573,215 @@ export default function OrderManager({ orders }: OrderManagerProps) {
               </button>
             </div>
 
-            {/* Error in Modal */}
-            {error && (
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 p-3 text-xs font-semibold text-red-600">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Update Status Control Header */}
-            <div className="mt-5 rounded-2xl border border-[#E9EDF7] bg-[#F8FAFC] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold text-[#0F172A] uppercase">
-                  Fulfillment Status
-                </p>
-                <p className="text-xs text-[#707EAE]">
-                  Change status to notify shipment or completion
-                </p>
-              </div>
-
-              <div className="w-full sm:w-48">
-                <MuiSelect
-                  value={updatingStatus}
-                  disabled={updatingLoading}
-                  onChange={(e) => {
-                    const newSt = e.target.value as string;
-                    setUpdatingStatus(newSt);
-                    handleStatusUpdate(newSt);
-                  }}
-                  options={[
-                    { value: 'pending', label: 'Pending' },
-                    { value: 'confirmed', label: 'Confirmed' },
-                    { value: 'processing', label: 'Processing' },
-                    { value: 'shipped', label: 'Shipped' },
-                    { value: 'delivered', label: 'Delivered' },
-                    { value: 'cancelled', label: 'Cancelled' },
-                    { value: 'refunded', label: 'Refunded' },
-                  ]}
-                />
-              </div>
-            </div>
-
-            {/* Customer & Shipping Information Grid */}
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Customer Card */}
-              <div className="rounded-xl border border-[#E9EDF7] p-4 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#0F172A] uppercase">
-                  <User className="h-4 w-4 text-[#6366F1]" />
-                  <span>Customer Contact</span>
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {/* Error in Modal */}
+              {error && (
+                <div className="mb-4 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 p-3 text-xs font-semibold text-red-600">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{error}</span>
                 </div>
-                <p className="text-sm font-extrabold text-[#0F172A]">
-                  {viewingOrder.shipping_full_name || viewingOrder.customer_name}
-                </p>
-                <p className="text-xs text-[#64748B]">
-                  {viewingOrder.customer_email || 'No email provided'}
-                </p>
-                <p className="text-xs text-[#64748B] flex items-center gap-1">
-                  <Phone className="h-3 w-3 text-[#94A3B8]" />
-                  <span>{viewingOrder.shipping_phone}</span>
-                </p>
+              )}
+
+              {/* Update Status Controls */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div className="rounded-2xl border border-[#E9EDF7] bg-[#F8FAFC] p-4 flex flex-col gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-[#0F172A] uppercase">
+                      Fulfillment Status
+                    </p>
+                    <p className="text-xs text-[#707EAE]">
+                      Change status to notify shipment or completion
+                    </p>
+                  </div>
+
+                  <div className="w-full">
+                    <MuiSelect
+                      value={updatingStatus}
+                      disabled={updatingLoading}
+                      onChange={(e) => {
+                        const newSt = e.target.value as string;
+                        setUpdatingStatus(newSt);
+                        handleStatusUpdate(newSt);
+                      }}
+                      options={[
+                        { value: 'pending', label: 'Pending' },
+                        { value: 'confirmed', label: 'Confirmed' },
+                        { value: 'processing', label: 'Processing' },
+                        { value: 'shipped', label: 'Shipped' },
+                        { value: 'delivered', label: 'Delivered' },
+                        { value: 'cancelled', label: 'Cancelled' },
+                        { value: 'refunded', label: 'Refunded' },
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#E9EDF7] bg-[#F8FAFC] p-4 flex flex-col gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-[#0F172A] uppercase">
+                      Payment Status
+                    </p>
+                    <p className="text-xs text-[#707EAE]">
+                      Update the payment state and sync it to the admin payment screen
+                    </p>
+                  </div>
+
+                  <div className="w-full">
+                    <MuiSelect
+                      value={updatingPaymentStatus}
+                      disabled={updatingLoading}
+                      onChange={(e) => {
+                        const newPaymentStatus = e.target.value as string;
+                        setUpdatingPaymentStatus(newPaymentStatus);
+                        handlePaymentStatusUpdate(newPaymentStatus);
+                      }}
+                      options={[
+                        { value: 'pending', label: 'Pending' },
+                        { value: 'paid', label: 'Paid' },
+                        { value: 'failed', label: 'Failed' },
+                        { value: 'refunded', label: 'Refunded' },
+                      ]}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Shipping Address */}
-              <div className="rounded-xl border border-[#E9EDF7] p-4 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#0F172A] uppercase">
-                  <MapPin className="h-4 w-4 text-[#6366F1]" />
-                  <span>Shipping Address</span>
+              {/* Customer & Shipping Information Grid */}
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Customer Card */}
+                <div className="rounded-xl border border-[#E9EDF7] p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#0F172A] uppercase">
+                    <User className="h-4 w-4 text-[#6366F1]" />
+                    <span>Customer Contact</span>
+                  </div>
+                  <p className="text-sm font-extrabold text-[#0F172A]">
+                    {viewingOrder.shipping_full_name || viewingOrder.customer_name}
+                  </p>
+                  <p className="text-xs text-[#64748B]">
+                    {viewingOrder.customer_email || 'No email provided'}
+                  </p>
+                  <p className="text-xs text-[#64748B] flex items-center gap-1">
+                    <Phone className="h-3 w-3 text-[#94A3B8]" />
+                    <span>{viewingOrder.shipping_phone}</span>
+                  </p>
                 </div>
-                <p className="text-xs text-[#0F172A] font-semibold">
-                  {viewingOrder.shipping_address_line1 || 'Primary Address'}
-                </p>
-                <p className="text-xs text-[#64748B]">
-                  {[
-                    viewingOrder.shipping_city,
-                    viewingOrder.shipping_state,
-                    viewingOrder.shipping_postal_code,
-                  ]
-                    .filter(Boolean)
-                    .join(', ')}
-                </p>
+
+                {/* Shipping Address */}
+                <div className="rounded-xl border border-[#E9EDF7] p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#0F172A] uppercase">
+                    <MapPin className="h-4 w-4 text-[#6366F1]" />
+                    <span>Shipping Address</span>
+                  </div>
+                  <p className="text-xs text-[#0F172A] font-semibold">
+                    {viewingOrder.shipping_address_line1 || 'Primary Address'}
+                  </p>
+                  <p className="text-xs text-[#64748B]">
+                    {[
+                      viewingOrder.shipping_city,
+                      viewingOrder.shipping_state,
+                      viewingOrder.shipping_postal_code,
+                    ]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Line Items List */}
-            <div className="mt-5 space-y-3">
-              <h4 className="text-xs font-bold text-[#0F172A] uppercase">
-                Order Items
-              </h4>
+              {/* Line Items List */}
+              <div className="mt-5 space-y-3">
+                <h4 className="text-xs font-bold text-[#0F172A] uppercase">
+                  Order Items
+                </h4>
 
-              {loadingDetails ? (
-                <div className="py-8 text-center text-xs font-semibold text-[#6366F1] flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Loading order items...</span>
-                </div>
-              ) : viewingOrder.items && viewingOrder.items.length > 0 ? (
-                <div className="divide-y divide-[#F1F5F9] rounded-xl border border-[#E9EDF7]">
-                  {viewingOrder.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-3.5 flex items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        {item.product_image ? (
-                          <img
-                            src={item.product_image}
-                            alt={item.product_name}
-                            className="h-10 w-10 rounded-lg object-cover border border-[#E9EDF7] shrink-0"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F8FAFC] border border-[#E9EDF7] text-[#94A3B8] shrink-0">
-                            <Package className="h-5 w-5" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-xs font-bold text-[#0F172A]">
-                            {item.product_name}
-                          </p>
-                          {item.variant_name && (
-                            <span className="text-[10px] text-[#6366F1] font-bold">
-                              Variant: {item.variant_name}
-                            </span>
+                {loadingDetails ? (
+                  <div className="py-8 text-center text-xs font-semibold text-[#6366F1] flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading order items...</span>
+                  </div>
+                ) : viewingOrder.items && viewingOrder.items.length > 0 ? (
+                  <div className="divide-y divide-[#F1F5F9] rounded-xl border border-[#E9EDF7]">
+                    {viewingOrder.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3.5 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.product_image ? (
+                            <img
+                              src={item.product_image}
+                              alt={item.product_name}
+                              className="h-10 w-10 rounded-lg object-cover border border-[#E9EDF7] shrink-0"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F8FAFC] border border-[#E9EDF7] text-[#94A3B8] shrink-0">
+                              <Package className="h-5 w-5" />
+                            </div>
                           )}
-                          <p className="text-[11px] font-mono text-[#94A3B8]">
-                            SKU: {item.sku || 'N/A'}
+                          <div>
+                            <p className="text-xs font-bold text-[#0F172A]">
+                              {item.product_name}
+                            </p>
+                            {item.variant_name && (
+                              <span className="text-[10px] text-[#6366F1] font-bold">
+                                Variant: {item.variant_name}
+                              </span>
+                            )}
+                            <p className="text-[11px] font-mono text-[#94A3B8]">
+                              SKU: {item.sku || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-xs font-extrabold text-[#0F172A]">
+                            ₹{Number(item.total_price || item.unit_price * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-[11px] text-[#94A3B8]">
+                            {item.quantity} x ₹{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#94A3B8] italic py-2">
+                    No detailed line items recorded for this order.
+                  </p>
+                )}
+              </div>
 
-                      <div className="text-right">
-                        <p className="text-xs font-extrabold text-[#0F172A]">
-                          ₹{Number(item.total_price || item.unit_price * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-[11px] text-[#94A3B8]">
-                          {item.quantity} x ₹{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+              {/* Price Summary Breakdown */}
+              <div className="mt-5 rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] p-4 space-y-2 text-xs">
+                <div className="flex justify-between text-[#64748B]">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-[#0F172A]">
+                    ₹{Number(viewingOrder.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
-              ) : (
-                <p className="text-xs text-[#94A3B8] italic py-2">
-                  No detailed line items recorded for this order.
-                </p>
-              )}
-            </div>
-
-            {/* Price Summary Breakdown */}
-            <div className="mt-5 rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] p-4 space-y-2 text-xs">
-              <div className="flex justify-between text-[#64748B]">
-                <span>Subtotal</span>
-                <span className="font-semibold text-[#0F172A]">
-                  ₹{Number(viewingOrder.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              {Number(viewingOrder.discount_amount) > 0 && (
-                <div className="flex justify-between text-emerald-600 font-semibold">
-                  <span>Discount ({viewingOrder.coupon_code || 'Promo'})</span>
-                  <span>-₹{Number(viewingOrder.discount_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                {Number(viewingOrder.discount_amount) > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-semibold">
+                    <span>Discount ({viewingOrder.coupon_code || 'Promo'})</span>
+                    <span>-₹{Number(viewingOrder.discount_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-[#64748B]">
+                  <span>Shipping Fee</span>
+                  <span className="font-semibold text-[#0F172A]">
+                    ₹{Number(viewingOrder.shipping_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
-              )}
-              <div className="flex justify-between text-[#64748B]">
-                <span>Shipping Fee</span>
-                <span className="font-semibold text-[#0F172A]">
-                  ₹{Number(viewingOrder.shipping_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex justify-between text-[#64748B]">
-                <span>Tax</span>
-                <span className="font-semibold text-[#0F172A]">
-                  ₹{Number(viewingOrder.tax_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="border-t border-[#E9EDF7] pt-2 flex justify-between text-sm font-extrabold text-[#0F172A]">
-                <span>Total Amount</span>
-                <span className="text-[#6366F1]">
-                  ₹{Number(viewingOrder.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
+                <div className="flex justify-between text-[#64748B]">
+                  <span>Tax</span>
+                  <span className="font-semibold text-[#0F172A]">
+                    ₹{Number(viewingOrder.tax_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="border-t border-[#E9EDF7] pt-2 flex justify-between text-sm font-extrabold text-[#0F172A]">
+                  <span>Total Amount</span>
+                  <span className="text-[#6366F1]">
+                    ₹{Number(viewingOrder.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

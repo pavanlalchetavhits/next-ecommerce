@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import {
     getOrderById,
-    updateOrderStatus
+    updateOrderStatus,
+    updateOrderPaymentStatus,
 } from '@/services/order.service';
 
 type Params = {
@@ -92,27 +93,31 @@ export async function PATCH(
 
         const body = await request.json();
 
-        if(!body.status)
-        {
+        if (!body.status && !body.payment_status) {
             return NextResponse.json(
                 {
                     success:false,
-                    message:'Order status is required'
+                    message:'Order status or payment status is required'
                 },{
                     status:400
                 }
             )
         }
 
-        await updateOrderStatus(
-            orderId,
-            body.status
-        )
+        if (body.status) {
+            await updateOrderStatus(orderId, body.status);
+        }
+
+        if (body.payment_status) {
+            await updateOrderPaymentStatus(orderId, body.payment_status);
+        }
 
         return NextResponse.json(
             {
                 success:true,
-                message:'Order status updated successfully'
+                message: body.payment_status
+                    ? 'Order payment status updated successfully'
+                    : 'Order status updated successfully'
             }
         )
     }
@@ -125,6 +130,17 @@ export async function PATCH(
                 {
                     success:false,
                     message:'Invalid order status'
+                },{
+                    status:400
+                }
+            )
+        }
+
+        if (error.message === 'Invalid_Order_Payment_Status') {
+            return NextResponse.json(
+                {
+                    success:false,
+                    message:'Invalid payment status'
                 },{
                     status:400
                 }

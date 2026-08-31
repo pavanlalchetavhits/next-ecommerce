@@ -184,6 +184,20 @@ const ORDER_STATUSES = [
   'refunded',
 ] as const;
 
+const ORDER_PAYMENT_STATUSES = [
+  'pending',
+  'paid',
+  'failed',
+  'refunded',
+] as const;
+
+const PAYMENT_STATUS_MAP: Record<string, string> = {
+  pending: 'pending',
+  paid: 'success',
+  failed: 'failed',
+  refunded: 'refunded',
+};
+
 export async function updateOrderStatus(orderId: number, status: string) {
   if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
     throw new Error('Invalid_Order_Status');
@@ -196,6 +210,34 @@ export async function updateOrderStatus(orderId: number, status: string) {
         where id = ?    
     `,
     [status, orderId]
+  );
+
+  return result;
+}
+
+export async function updateOrderPaymentStatus(orderId: number, paymentStatus: string) {
+  if (!ORDER_PAYMENT_STATUSES.includes(paymentStatus as (typeof ORDER_PAYMENT_STATUSES)[number])) {
+    throw new Error('Invalid_Order_Payment_Status');
+  }
+
+  const mappedPaymentStatus = PAYMENT_STATUS_MAP[paymentStatus] || paymentStatus;
+
+  const [result] = await db.query(
+    `
+        update orders
+        set payment_status = ?
+        where id = ?
+    `,
+    [paymentStatus, orderId]
+  );
+
+  await db.query(
+    `
+        update payments
+        set status = ?
+        where order_id = ?
+    `,
+    [mappedPaymentStatus, orderId]
   );
 
   return result;
