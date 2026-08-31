@@ -56,7 +56,7 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <DashboardCard
           title="Total Revenue"
-          value={`$${stats.totalRevenue.toFixed(2)}`}
+          value={`₹${stats.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={DollarSign}
           subtitle="Real-time completed orders total"
         />

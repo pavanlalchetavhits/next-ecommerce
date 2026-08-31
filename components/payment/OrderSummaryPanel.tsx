@@ -111,10 +111,10 @@ export default function OrderSummaryPanel({
               )}
               <div className="flex items-center justify-between mt-1">
                 <span className="text-[11px] font-medium text-slate-500">
-                  Qty: {item.quantity} × ${item.unit_price.toFixed(2)}
+                  Qty: {item.quantity} × ₹{item.unit_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono">
-                  ${(item.quantity * item.unit_price).toFixed(2)}
+                  ₹{(item.quantity * item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function OrderSummaryPanel({
                   {appliedCoupon}
                 </span>
                 <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                  -${discountAmount.toFixed(2)} Discount Applied
+                  -₹{discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Discount Applied
                 </p>
               </div>
             </div>
@@ -240,7 +240,7 @@ export default function OrderSummaryPanel({
               <p className="text-[10px] text-slate-500">1-2 Business Days</p>
             </div>
             <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono">
-              +$15.00
+              +₹150.00
             </span>
           </button>
 
@@ -252,28 +252,28 @@ export default function OrderSummaryPanel({
         <div className="flex justify-between text-slate-600 dark:text-slate-400">
           <span>Subtotal</span>
           <span className="font-mono font-bold text-slate-900 dark:text-white">
-            ${subtotal.toFixed(2)}
+            ₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
 
         {discountAmount > 0 && (
           <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
             <span>Coupon Discount</span>
-            <span className="font-mono font-bold">-${discountAmount.toFixed(2)}</span>
+            <span className="font-mono font-bold">-₹{discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
 
         <div className="flex justify-between text-slate-600 dark:text-slate-400">
           <span>Shipping Fee</span>
           <span className="font-mono font-bold text-slate-900 dark:text-white">
-            {shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}
+            {shippingCost === 0 ? 'FREE' : `₹${shippingCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </span>
         </div>
 
         <div className="flex justify-between text-slate-600 dark:text-slate-400">
           <span>Estimated Tax (18% GST)</span>
           <span className="font-mono font-bold text-slate-900 dark:text-white">
-            ${taxAmount.toFixed(2)}
+            ₹{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
 
@@ -285,7 +285,7 @@ export default function OrderSummaryPanel({
             <p className="text-[10px] text-slate-400">Includes taxes & shipping</p>
           </div>
           <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-tight">
-            ${totalAmount.toFixed(2)}
+            ₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
       </div>

@@ -274,7 +274,7 @@ export default function OrderManager({ orders }: OrderManagerProps) {
             </div>
           </div>
           <p className="mt-2 text-2xl font-extrabold text-[#0F172A]">
-            ${totalRevenue.toFixed(2)}
+            ₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <p className="mt-1 text-xs text-emerald-600 font-medium">Paid & Delivered sales</p>
         </div>
@@ -436,7 +436,7 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
                     {/* Total Amount */}
                     <td className="py-4 px-4 font-extrabold text-[#0F172A]">
-                      ${Number(ord.total_amount).toFixed(2)}
+                      ₹{Number(ord.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
                     {/* Payment Status Pill */}
@@ -666,10 +666,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
                       <div className="text-right">
                         <p className="text-xs font-extrabold text-[#0F172A]">
-                          ${Number(item.total_price || item.unit_price * item.quantity).toFixed(2)}
+                          ₹{Number(item.total_price || item.unit_price * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                         <p className="text-[11px] text-[#94A3B8]">
-                          {item.quantity} x ${Number(item.unit_price).toFixed(2)}
+                          {item.quantity} x ₹{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                     </div>
@@ -687,31 +687,31 @@ export default function OrderManager({ orders }: OrderManagerProps) {
               <div className="flex justify-between text-[#64748B]">
                 <span>Subtotal</span>
                 <span className="font-semibold text-[#0F172A]">
-                  ${Number(viewingOrder.subtotal).toFixed(2)}
+                  ₹{Number(viewingOrder.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               {Number(viewingOrder.discount_amount) > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Discount ({viewingOrder.coupon_code || 'Promo'})</span>
-                  <span>-${Number(viewingOrder.discount_amount).toFixed(2)}</span>
+                  <span>-₹{Number(viewingOrder.discount_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
               <div className="flex justify-between text-[#64748B]">
                 <span>Shipping Fee</span>
                 <span className="font-semibold text-[#0F172A]">
-                  ${Number(viewingOrder.shipping_amount).toFixed(2)}
+                  ₹{Number(viewingOrder.shipping_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex justify-between text-[#64748B]">
                 <span>Tax</span>
                 <span className="font-semibold text-[#0F172A]">
-                  ${Number(viewingOrder.tax_amount).toFixed(2)}
+                  ₹{Number(viewingOrder.tax_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="border-t border-[#E9EDF7] pt-2 flex justify-between text-sm font-extrabold text-[#0F172A]">
                 <span>Total Amount</span>
                 <span className="text-[#6366F1]">
-                  ${Number(viewingOrder.total_amount).toFixed(2)}
+                  ₹{Number(viewingOrder.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

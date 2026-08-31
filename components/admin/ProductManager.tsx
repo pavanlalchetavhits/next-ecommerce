@@ -229,10 +229,10 @@ export default function ProductManager({ products }: ProductManagerProps) {
                       {prod.sku}
                     </td>
                     <td className="py-4 px-4 font-bold text-[#0F172A]">
-                      ${Number(prod.price).toFixed(2)}
+                      ₹{Number(prod.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       {prod.compare_at_price && (
                         <span className="ml-1.5 text-xs text-[#94A3B8] line-through font-normal">
-                          ${Number(prod.compare_at_price).toFixed(2)}
+                          ₹{Number(prod.compare_at_price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       )}
                     </td>
