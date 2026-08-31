@@ -17,6 +17,7 @@ import {
   Minus,
 } from 'lucide-react';
 import api from '@/lib/axios';
+import Pagination from '@/components/ui/Pagination';
 
 export interface InventoryItem {
   product_id: number;
@@ -57,6 +58,9 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
 
   // Statistics
   const totalItems = inventory.length;
@@ -90,6 +94,13 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
 
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredInventory.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedInventory = filteredInventory.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  );
 
   // Open Edit Stock Modal
   const openEditModal = (item: InventoryItem) => {
@@ -221,7 +232,10 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
         {/* Status Filter Tabs */}
         <div className="flex items-center gap-1.5 rounded-xl border border-[#E9EDF7] bg-white p-1.5 shadow-sm">
           <button
-            onClick={() => setStatusFilter('all')}
+            onClick={() => {
+              setStatusFilter('all');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'all'
                 ? 'bg-[#6366F1] text-white shadow-sm'
@@ -232,7 +246,10 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('in_stock')}
+            onClick={() => {
+              setStatusFilter('in_stock');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'in_stock'
                 ? 'bg-emerald-600 text-white shadow-sm'
@@ -243,7 +260,10 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('low_stock')}
+            onClick={() => {
+              setStatusFilter('low_stock');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'low_stock'
                 ? 'bg-amber-500 text-white shadow-sm'
@@ -254,7 +274,10 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('out_of_stock')}
+            onClick={() => {
+              setStatusFilter('out_of_stock');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'out_of_stock'
                 ? 'bg-red-600 text-white shadow-sm'
@@ -272,7 +295,10 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
             type="text"
             placeholder="Search by product name, SKU, or category..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full rounded-xl border border-[#E9EDF7] bg-white py-2.5 pl-10 pr-4 text-xs text-[#0F172A] placeholder-[#94A3B8] outline-none shadow-sm transition-all focus:border-[#6366F1]"
           />
         </div>
@@ -305,7 +331,7 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F1F5F9]">
-                {filteredInventory.map((item) => {
+                {paginatedInventory.map((item) => {
                   const isOutOfStock = item.quantity <= 0;
                   const isLowStock =
                     item.quantity > 0 && item.quantity <= item.low_stock_threshold;
@@ -412,6 +438,21 @@ export default function InventoryManager({ inventory }: InventoryManagerProps) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {filteredInventory.length > 0 && (
+          <div className="pt-6">
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={filteredInventory.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page) =>
+                setCurrentPage(Math.min(Math.max(page, 1), totalPages))
+              }
+              itemLabel="inventory items"
+            />
           </div>
         )}
       </div>

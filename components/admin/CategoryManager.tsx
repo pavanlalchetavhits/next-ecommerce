@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import MuiSelect from '@/components/ui/MuiSelect';
+import Pagination from '@/components/ui/Pagination';
 
 export interface Category {
   id: number;
@@ -55,6 +56,15 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
+  const totalPages = Math.max(1, Math.ceil(categories.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedCategories = categories.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  );
 
   // File Upload Handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -300,7 +310,7 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F1F5F9]">
-                {categories.map((cat) => (
+                {paginatedCategories.map((cat) => (
                   <tr key={cat.id} className="group hover:bg-[#F8FAFC]">
                     <td className="py-4 px-4 font-bold text-[#0F172A]">
                       <div className="flex items-center gap-3">
@@ -363,6 +373,21 @@ export default function CategoryManager({ categories }: CategoryManagerProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {categories.length > 0 && (
+          <div className="pt-6">
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={categories.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page) =>
+                setCurrentPage(Math.min(Math.max(page, 1), totalPages))
+              }
+              itemLabel="categories"
+            />
           </div>
         )}
       </div>

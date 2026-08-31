@@ -18,6 +18,7 @@ import {
   Package,
 } from 'lucide-react';
 import api from '@/lib/axios';
+import Pagination from '@/components/ui/Pagination';
 
 export interface ReviewItem {
   id: number;
@@ -52,6 +53,9 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
 
   // Statistics
   const totalReviews = reviews.length;
@@ -81,6 +85,13 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
 
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredReviews.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedReviews = filteredReviews.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  );
 
   // Handle Moderation Status Update (Approve / Reject)
   const handleStatusUpdate = async (reviewId: number, newStatus: 'approved' | 'rejected' | 'pending') => {
@@ -235,7 +246,10 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
           {/* Status Tabs */}
           <div className="flex items-center gap-1 rounded-xl border border-[#E9EDF7] bg-white p-1 shadow-sm">
             <button
-              onClick={() => setStatusFilter('all')}
+              onClick={() => {
+                setStatusFilter('all');
+                setCurrentPage(1);
+              }}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 statusFilter === 'all'
                   ? 'bg-[#6366F1] text-white shadow-sm'
@@ -246,7 +260,10 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
             </button>
 
             <button
-              onClick={() => setStatusFilter('pending')}
+              onClick={() => {
+                setStatusFilter('pending');
+                setCurrentPage(1);
+              }}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 statusFilter === 'pending'
                   ? 'bg-amber-500 text-white shadow-sm'
@@ -257,7 +274,10 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
             </button>
 
             <button
-              onClick={() => setStatusFilter('approved')}
+              onClick={() => {
+                setStatusFilter('approved');
+                setCurrentPage(1);
+              }}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 statusFilter === 'approved'
                   ? 'bg-emerald-600 text-white shadow-sm'
@@ -268,7 +288,10 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
             </button>
 
             <button
-              onClick={() => setStatusFilter('rejected')}
+              onClick={() => {
+                setStatusFilter('rejected');
+                setCurrentPage(1);
+              }}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 statusFilter === 'rejected'
                   ? 'bg-red-600 text-white shadow-sm'
@@ -282,11 +305,10 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
           {/* Star Filter Dropdown */}
           <select
             value={ratingFilter}
-            onChange={(e) =>
-              setRatingFilter(
-                e.target.value === 'all' ? 'all' : Number(e.target.value)
-              )
-            }
+            onChange={(e) => {
+              setRatingFilter(e.target.value === 'all' ? 'all' : Number(e.target.value));
+              setCurrentPage(1);
+            }}
             className="rounded-xl border border-[#E9EDF7] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] outline-none shadow-sm transition-all focus:border-[#6366F1]"
           >
             <option value="all">All Rating Stars</option>
@@ -305,7 +327,10 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
             type="text"
             placeholder="Search by product, customer, or comment..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full rounded-xl border border-[#E9EDF7] bg-white py-2.5 pl-10 pr-4 text-xs text-[#0F172A] placeholder-[#94A3B8] outline-none shadow-sm transition-all focus:border-[#6366F1]"
           />
         </div>
@@ -337,7 +362,7 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F1F5F9]">
-                {filteredReviews.map((rev) => (
+                {paginatedReviews.map((rev) => (
                   <tr key={rev.id} className="group hover:bg-[#F8FAFC]">
                     {/* Product Info */}
                     <td className="py-4 px-4">
@@ -459,6 +484,21 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {filteredReviews.length > 0 && (
+          <div className="pt-6">
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={filteredReviews.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page) =>
+                setCurrentPage(Math.min(Math.max(page, 1), totalPages))
+              }
+              itemLabel="reviews"
+            />
           </div>
         )}
       </div>

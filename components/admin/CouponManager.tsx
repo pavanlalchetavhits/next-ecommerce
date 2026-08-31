@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import MuiSelect from '@/components/ui/MuiSelect';
+import Pagination from '@/components/ui/Pagination';
 
 export interface CouponItem {
   id: number;
@@ -74,6 +75,9 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
 
   // Statistics
   const totalCoupons = coupons.length;
@@ -92,6 +96,13 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
 
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredCoupons.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedCoupons = filteredCoupons.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  );
 
   // Open Create Modal
   const openCreateModal = () => {
@@ -296,7 +307,10 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
         {/* Status Filter Tabs */}
         <div className="flex items-center gap-1.5 rounded-xl border border-[#E9EDF7] bg-white p-1.5 shadow-sm">
           <button
-            onClick={() => setStatusFilter('all')}
+            onClick={() => {
+              setStatusFilter('all');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'all'
                 ? 'bg-[#6366F1] text-white shadow-sm'
@@ -307,7 +321,10 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('active')}
+            onClick={() => {
+              setStatusFilter('active');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'active'
                 ? 'bg-emerald-600 text-white shadow-sm'
@@ -318,7 +335,10 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('inactive')}
+            onClick={() => {
+              setStatusFilter('inactive');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'inactive'
                 ? 'bg-slate-700 text-white shadow-sm'
@@ -336,7 +356,10 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
             type="text"
             placeholder="Search by promo code or description..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full rounded-xl border border-[#E9EDF7] bg-white py-2.5 pl-10 pr-4 text-xs text-[#0F172A] placeholder-[#94A3B8] outline-none shadow-sm transition-all focus:border-[#6366F1]"
           />
         </div>
@@ -369,7 +392,7 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F1F5F9]">
-                {filteredCoupons.map((c) => (
+                {paginatedCoupons.map((c) => (
                   <tr key={c.id} className="group hover:bg-[#F8FAFC]">
                     {/* Promo Code Pill */}
                     <td className="py-4 px-4 font-mono font-bold text-[#0F172A]">

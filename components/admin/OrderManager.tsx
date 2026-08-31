@@ -8,7 +8,6 @@ import {
   Clock,
   Truck,
   CheckCircle2,
-  XCircle,
   Eye,
   X,
   Loader2,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import MuiSelect from '@/components/ui/MuiSelect';
+import Pagination from '@/components/ui/Pagination';
 
 export interface OrderItemDetail {
   id: number;
@@ -77,6 +77,7 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [viewingOrder, setViewingOrder] = useState<OrderItem | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string>('');
@@ -109,6 +110,8 @@ export default function OrderManager({ orders }: OrderManagerProps) {
     .filter((o) => o.payment_status === 'paid' || o.status === 'delivered')
     .reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
 
+  const itemsPerPage = 10;
+
   // Filter orders
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -128,6 +131,14 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedOrders = filteredOrders.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  );
 
   // Open Order Details Modal & Fetch Line Items
   const openOrderDetails = async (order: OrderItem) => {
@@ -163,13 +174,20 @@ export default function OrderManager({ orders }: OrderManagerProps) {
 
       if (res.status === 200 || res.data?.success) {
         setSuccessMsg(`Order ${viewingOrder.order_number} status updated to "${newStatus}"!`);
-        setViewingOrder((prev) => (prev ? { ...prev, status: newStatus as any } : null));
+        setViewingOrder((prev) =>
+          prev ? { ...prev, status: newStatus as OrderItem['status'] } : null
+        );
         setUpdatingStatus(newStatus);
         router.refresh();
         setTimeout(() => setSuccessMsg(''), 3500);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update order status');
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data
+          ? String(err.response.data.message)
+          : 'Failed to update order status';
+
+      setError(message);
     } finally {
       setUpdatingLoading(false);
     }
@@ -267,7 +285,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
         {/* Status Filter Tabs */}
         <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#E9EDF7] bg-white p-1.5 shadow-sm">
           <button
-            onClick={() => setStatusFilter('all')}
+            onClick={() => {
+              setStatusFilter('all');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'all'
                 ? 'bg-[#6366F1] text-white shadow-sm'
@@ -278,7 +299,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('pending')}
+            onClick={() => {
+              setStatusFilter('pending');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'pending'
                 ? 'bg-amber-500 text-white shadow-sm'
@@ -289,7 +313,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('processing')}
+            onClick={() => {
+              setStatusFilter('processing');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'processing'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -300,7 +327,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('shipped')}
+            onClick={() => {
+              setStatusFilter('shipped');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'shipped'
                 ? 'bg-sky-600 text-white shadow-sm'
@@ -311,7 +341,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('delivered')}
+            onClick={() => {
+              setStatusFilter('delivered');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'delivered'
                 ? 'bg-emerald-600 text-white shadow-sm'
@@ -322,7 +355,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
           </button>
 
           <button
-            onClick={() => setStatusFilter('cancelled')}
+            onClick={() => {
+              setStatusFilter('cancelled');
+              setCurrentPage(1);
+            }}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'cancelled'
                 ? 'bg-red-600 text-white shadow-sm'
@@ -340,7 +376,10 @@ export default function OrderManager({ orders }: OrderManagerProps) {
             type="text"
             placeholder="Search by order #, customer, or email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full rounded-xl border border-[#E9EDF7] bg-white py-2.5 pl-10 pr-4 text-xs text-[#0F172A] placeholder-[#94A3B8] outline-none shadow-sm transition-all focus:border-[#6366F1]"
           />
         </div>
@@ -373,7 +412,7 @@ export default function OrderManager({ orders }: OrderManagerProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F1F5F9]">
-                {filteredOrders.map((ord) => (
+                {paginatedOrders.map((ord) => (
                   <tr key={ord.id} className="group hover:bg-[#F8FAFC]">
                     {/* Order Number */}
                     <td className="py-4 px-4 font-mono text-xs font-bold text-[#6366F1]">
@@ -453,6 +492,19 @@ export default function OrderManager({ orders }: OrderManagerProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {!filteredOrders.length ? null : (
+          <div className="pt-6">
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={filteredOrders.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page) => setCurrentPage(Math.min(Math.max(page, 1), totalPages))}
+              itemLabel="orders"
+            />
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import api from '@/lib/axios';
+import Pagination from '@/components/ui/Pagination';
 
 export interface ProductItem {
   id: number;
@@ -46,10 +47,13 @@ export default function ProductManager({ products }: ProductManagerProps) {
 
   const [search, setSearch] = useState('');
   const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const itemsPerPage = 10;
 
   // Filter products by search term
   const filteredProducts = products.filter(
@@ -58,6 +62,14 @@ export default function ProductManager({ products }: ProductManagerProps) {
       p.sku.toLowerCase().includes(search.toLowerCase()) ||
       (p.category_name &&
         p.category_name.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedProducts = filteredProducts.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
   );
 
   const handleDeleteConfirm = async () => {
@@ -75,8 +87,13 @@ export default function ProductManager({ products }: ProductManagerProps) {
         router.refresh();
         setTimeout(() => setSuccessMsg(''), 3000);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete product');
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data
+          ? String(err.response.data.message)
+          : 'Failed to delete product';
+
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -120,7 +137,10 @@ export default function ProductManager({ products }: ProductManagerProps) {
             type="text"
             placeholder="Search products by name, SKU, or category..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full rounded-xl border border-[#E9EDF7] bg-white py-2.5 pl-10 pr-4 text-sm text-[#0F172A] placeholder-[#94A3B8] outline-none shadow-sm transition-all focus:border-[#6366F1]"
           />
         </div>
@@ -170,7 +190,7 @@ export default function ProductManager({ products }: ProductManagerProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F1F5F9]">
-                {filteredProducts.map((prod) => (
+                {paginatedProducts.map((prod) => (
                   <tr key={prod.id} className="group hover:bg-[#F8FAFC]">
                     <td className="py-4 px-4 font-bold text-[#0F172A]">
                       <div className="flex items-center gap-3">
@@ -256,6 +276,19 @@ export default function ProductManager({ products }: ProductManagerProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {!filteredProducts.length ? null : (
+          <div className="pt-6">
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={filteredProducts.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page) => setCurrentPage(Math.min(Math.max(page, 1), totalPages))}
+              itemLabel="products"
+            />
           </div>
         )}
       </div>

@@ -21,6 +21,7 @@ import {
   CheckCheck,
   Archive,
 } from 'lucide-react';
+import Pagination from '@/components/ui/Pagination';
 
 interface ContactMessage {
   id: number;
@@ -50,6 +51,9 @@ export default function MessageManager() {
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -73,6 +77,13 @@ export default function MessageManager() {
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
+
+  const totalPages = Math.max(1, Math.ceil(messages.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedMessages = messages.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  );
 
   const handleUpdateStatus = async (id: number, status: 'unread' | 'read' | 'replied' | 'archived') => {
     try {
@@ -194,7 +205,10 @@ export default function MessageManager() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setCurrentPage(1);
+              }}
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-[#6366F1] text-white shadow-xs'
@@ -213,7 +227,10 @@ export default function MessageManager() {
             type="text"
             placeholder="Search by name, email, subject..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-[#A3AED0] outline-none focus:border-[#6366F1] focus:bg-white transition-all"
           />
         </div>
@@ -251,7 +268,7 @@ export default function MessageManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E9EDF7] text-xs">
-                {messages.map((msg) => (
+                {paginatedMessages.map((msg) => (
                   <tr
                     key={msg.id}
                     className={`hover:bg-purple-50/20 transition-colors ${
@@ -350,6 +367,21 @@ export default function MessageManager() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {messages.length > 0 && (
+          <div className="p-4 border-t border-[#E9EDF7] bg-[#F8FAFC]">
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={messages.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page) =>
+                setCurrentPage(Math.min(Math.max(page, 1), totalPages))
+              }
+              itemLabel="messages"
+            />
           </div>
         )}
       </div>
