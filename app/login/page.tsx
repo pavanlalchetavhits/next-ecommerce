@@ -178,6 +178,17 @@ export default function LoginPage() {
     setLoading(false);
 
     if (!result || result.error) {
+      try {
+        const checkRes = await fetch(`/api/auth/check-status?email=${encodeURIComponent(email)}`);
+        const checkData = await checkRes.json();
+        if (checkData?.isBlocked) {
+          setGlobalError('Your account has been blocked by the administrator. Please contact customer support.');
+          return;
+        }
+      } catch (err) {
+        // Fallback
+      }
+
       setGlobalError('Invalid email or password. Please check your credentials and try again.');
       return;
     }

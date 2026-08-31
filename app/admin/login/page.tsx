@@ -170,6 +170,17 @@ export default function AdminLoginPage() {
     setLoading(false);
 
     if (!result || result.error) {
+      try {
+        const checkRes = await fetch(`/api/auth/check-status?email=${encodeURIComponent(email)}`);
+        const checkData = await checkRes.json();
+        if (checkData?.isBlocked) {
+          setGlobalError('Your account has been blocked by the administrator. Access denied.');
+          return;
+        }
+      } catch (err) {
+        // Fallback
+      }
+
       setGlobalError('Invalid administrator email or password. Please try again.');
       return;
     }

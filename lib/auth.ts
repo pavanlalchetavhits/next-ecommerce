@@ -1,8 +1,12 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 import { authConfig } from "@/lib/auth.config";
+
+class AccountBlockedError extends CredentialsSignin {
+  code = "ACCOUNT_BLOCKED";
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -54,11 +58,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const user = users[0];
 
-        // Only active users can login
-        if (user.status !== "active") {
-          return null;
-        }
-
         const passwordMatch = await bcrypt.compare(
           String(credentials.password),
           user.password
@@ -66,6 +65,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!passwordMatch) {
           return null;
+        }
+
+        // Only active users can login
+        if (user.status !== "active") {
+          throw new AccountBlockedError();
         }
 
         // Update last login
@@ -83,6 +87,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          status: user.status,
         };
       },
     }),

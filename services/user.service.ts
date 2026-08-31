@@ -176,3 +176,118 @@ export async function resetUserPasswordWithToken(email: string, token: string, n
 
   return { success: true };
 }
+
+/**
+ * Fetch paginated customer list for Admin with search, order count, total spent, and summary
+ */
+export async function getAdminCustomers(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}) {
+  const page = Math.max(1, Number(params.page) || 1);
+  const limit = Math.max(1, Math.min(100, Number(params.limit) || 10));
+  const offset = (page - 1) * limit;
+
+  const whereConditions: string[] = ["u.role = 'user'"];
+  const queryParams: any[] = [];
+
+  if (params.search && params.search.trim() !== '') {
+    const term = `%${params.search.trim()}%`;
+    whereConditions.push('(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)');
+    queryParams.push(term, term, term);
+  }
+
+  if (params.status && params.status !== 'all') {
+    whereConditions.push('u.status = ?');
+    queryParams.push(params.status);
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  const [countRows]: any = await db.query(
+    `SELECT COUNT(DISTINCT u.id) as total FROM users u ${whereClause}`,
+    queryParams
+  );
+  const total = countRows[0]?.total || 0;
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  const sql = `
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      u.phone,
+      u.role,
+      u.status,
+      u.last_login_at,
+      u.created_at,
+      (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id) AS order_count,
+      COALESCE((SELECT SUM(total_amount) FROM orders o WHERE o.user_id = u.id AND o.status != 'cancelled'), 0) AS total_spent
+    FROM users u
+    ${whereClause}
+    ORDER BY u.created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+
+  const [rows]: any = await db.query(sql, [...queryParams, limit, offset]);
+
+  const [summaryRows]: any = await db.query(`
+    SELECT 
+      COUNT(DISTINCT u.id) AS total_customers,
+      SUM(CASE WHEN u.status = 'active' THEN 1 ELSE 0 END) AS active_customers,
+      SUM(CASE WHEN u.status != 'active' THEN 1 ELSE 0 END) AS blocked_customers
+    FROM users u
+    WHERE u.role = 'user'
+  `);
+
+  const summary = summaryRows[0] || { total_customers: 0, active_customers: 0, blocked_customers: 0 };
+
+  return {
+    data: Array.isArray(rows) ? rows : [],
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages,
+    },
+    summary,
+  };
+}
+
+/**
+ * Update Customer Account Status (active, blocked, suspended)
+ */
+export async function updateCustomerStatus(userId: number, status: 'active' | 'blocked' | 'suspended') {
+  const [result]: any = await db.query(
+    `UPDATE users SET status = ? WHERE id = ? AND role = 'user'`,
+    [status, userId]
+  );
+  return result;
+}
+
+/**
+ * Get customer's order history for Admin view
+ */
+export async function getCustomerOrderHistory(userId: number) {
+  const [rows]: any = await db.query(
+    `
+    SELECT 
+      o.id,
+      o.order_number,
+      o.total_amount,
+      o.status,
+      o.payment_status,
+      o.created_at,
+      (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS total_items,
+      COALESCE((SELECT payment_method FROM payments p WHERE p.order_id = o.id ORDER BY p.id DESC LIMIT 1), 'ONLINE') AS payment_method
+    FROM orders o
+    WHERE o.user_id = ?
+    ORDER BY o.created_at DESC
+    `,
+    [userId]
+  );
+
+  return Array.isArray(rows) ? rows : [];
+}
