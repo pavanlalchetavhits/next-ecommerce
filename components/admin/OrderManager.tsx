@@ -398,9 +398,9 @@ export default function OrderManager({ orders }: OrderManagerProps) {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[62vh] overflow-auto">
             <table className="w-full text-left text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#F8FAFC]">
                 <tr className="border-b border-[#F1F5F9] text-xs font-bold text-[#94A3B8] uppercase">
                   <th className="py-3 px-4">Order Number</th>
                   <th className="py-3 px-4">Customer</th>

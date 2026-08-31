@@ -256,9 +256,9 @@ export default function MessageManager() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[62vh] overflow-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#F8FAFC]">
                 <tr className="border-b border-[#E9EDF7] bg-[#F8FAFC] text-[11px] font-bold text-[#707EAE] uppercase tracking-wider">
                   <th className="py-3.5 px-6">Sender Details</th>
                   <th className="py-3.5 px-6">Subject & Preview</th>
