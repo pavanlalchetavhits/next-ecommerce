@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 
 interface PaginationProps {
   currentPage: number;
@@ -8,8 +8,11 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
+  itemsPerPageOptions?: number[];
   itemLabel?: string;
   className?: string;
+  showCounter?: boolean;
 }
 
 export default function Pagination({
@@ -18,32 +21,43 @@ export default function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
+  itemsPerPageOptions = [10, 20, 50, 100],
   itemLabel = 'items',
   className = '',
+  showCounter = true,
 }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1 && totalItems <= itemsPerPage) return null;
 
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  // Generate page numbers with smart ellipsis handling if totalPages is large
+  // Generate page numbers with smart ellipsis handling matching reference design (< 1 2 3 4 5 ... 30 >)
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('...');
-
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
+      if (currentPage <= 4) {
+        // Near start: 1 2 3 4 5 ... 30
+        for (let i = 1; i <= 5; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        // Near end: 1 ... 26 27 28 29 30
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+      } else {
+        // Middle: 1 ... 14 15 16 ... 30
+        pages.push(1);
+        pages.push('...');
+        pages.push(currentPage - 1);
+        pages.push(currentPage);
+        pages.push(currentPage + 1);
+        pages.push('...');
+        pages.push(totalPages);
       }
-
-      if (currentPage < totalPages - 2) pages.push('...');
-      pages.push(totalPages);
     }
     return pages;
   };
@@ -55,40 +69,37 @@ export default function Pagination({
   };
 
   return (
-    <div
-      className={`flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-purple-100/80 bg-white/50 backdrop-blur-xs p-4 rounded-2xl border shadow-2xs ${className}`}
-    >
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 ${className}`}>
       {/* Item Counter Info */}
-      <span className="text-xs text-slate-500 font-medium">
-        Showing{' '}
-        <strong className="text-slate-900 font-bold">
-          {startItem}–{endItem}
-        </strong>{' '}
-        of <strong className="text-slate-900 font-bold">{totalItems}</strong> {itemLabel}
-      </span>
+      {showCounter && (
+        <span className="text-xs text-slate-500 font-medium">
+          Showing <strong className="text-slate-900 font-bold">{startItem}–{endItem}</strong> of{' '}
+          <strong className="text-slate-900 font-bold">{totalItems}</strong> {itemLabel}
+        </span>
+      )}
 
-      {/* Pagination Controls */}
-      <div className="flex items-center gap-1.5">
-        {/* Previous Button */}
+      {/* Floating Pill Bar Container matching user image design */}
+      <div className="inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-full bg-white px-3 sm:px-4 py-1.5 sm:py-2 border border-slate-200/80 shadow-md shadow-slate-200/40">
+        {/* Previous Page Button */}
         <button
           type="button"
           onClick={() => handlePageClick(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-purple-100 bg-white text-slate-700 hover:bg-purple-50 hover:text-[#5b46f6] disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-slate-700 transition-all shadow-2xs cursor-pointer"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
           title="Previous Page"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
 
-        {/* Page Buttons */}
+        {/* Page Numbers */}
         {getPageNumbers().map((p, idx) => {
           if (p === '...') {
             return (
               <span
                 key={`ellipsis-${idx}`}
-                className="h-9 w-9 flex items-center justify-center text-xs font-bold text-slate-400 select-none"
+                className="px-1 text-xs font-semibold text-slate-400 select-none"
               >
-                •••
+                ...
               </span>
             );
           }
@@ -101,10 +112,10 @@ export default function Pagination({
               key={pageNum}
               type="button"
               onClick={() => handlePageClick(pageNum)}
-              className={`h-9 w-9 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`w-8 h-8 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center justify-center ${
                 isActive
-                  ? 'bg-[#5b46f6] text-white shadow-xs ring-2 ring-indigo-500/20'
-                  : 'bg-white text-slate-700 border border-purple-100 hover:bg-purple-50 hover:text-[#5b46f6]'
+                  ? 'border-2 border-[#5b46f6]/60 bg-purple-50 text-[#5b46f6] shadow-2xs scale-105'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
               {pageNum}
@@ -112,16 +123,38 @@ export default function Pagination({
           );
         })}
 
-        {/* Next Button */}
+        {/* Next Page Button */}
         <button
           type="button"
           onClick={() => handlePageClick(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-purple-100 bg-white text-slate-700 hover:bg-purple-50 hover:text-[#5b46f6] disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-slate-700 transition-all shadow-2xs cursor-pointer"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
           title="Next Page"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
+
+        {/* Items Per Page Selector Pill */}
+        {onItemsPerPageChange ? (
+          <div className="relative inline-flex items-center ml-2 border border-slate-200 bg-slate-50/80 rounded-full px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer">
+            <select
+              value={itemsPerPage}
+              onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+              className="appearance-none bg-transparent pr-4 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+            >
+              {itemsPerPageOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt} / page
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="h-3 w-3 text-slate-500 absolute right-2.5 pointer-events-none" />
+          </div>
+        ) : (
+          <div className="relative inline-flex items-center ml-2 border border-slate-200 bg-slate-50/80 rounded-full px-3 py-1 text-xs font-semibold text-slate-700">
+            <span>{itemsPerPage} / page</span>
+          </div>
+        )}
       </div>
     </div>
   );
