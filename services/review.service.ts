@@ -5,6 +5,7 @@ export type GetReviewParams = {
   rating?: number;
   status?: 'pending' | 'approved' | 'rejected';
   productId?: number;
+  userId?: number;
 };
 
 export type CreateReviewInput = {
@@ -21,6 +22,7 @@ export async function getReviews({
   rating,
   status,
   productId,
+  userId,
 }: GetReviewParams = {}) {
   try {
     let sql = `
@@ -88,6 +90,11 @@ export async function getReviews({
     if (productId) {
       sql += ` AND r.product_id = ? `;
       params.push(productId);
+    }
+
+    if (userId) {
+      sql += ` AND r.user_id = ? `;
+      params.push(userId);
     }
 
     sql += ` ORDER BY r.created_at DESC `;

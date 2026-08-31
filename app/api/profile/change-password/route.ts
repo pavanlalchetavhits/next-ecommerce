@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { validatePassword } from '@/lib/validations/user';
 
 export async function POST(request: Request) {
   try {
@@ -25,9 +26,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (newPassword.length < 6) {
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
       return NextResponse.json(
-        { success: false, message: 'New password must be at least 6 characters' },
+        { success: false, message: passwordError },
         { status: 400 }
       );
     }

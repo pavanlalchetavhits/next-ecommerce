@@ -15,6 +15,8 @@ export async function GET(request: Request) {
       | null;
     const productIdParams = searchParams.get('productId');
     const productId = productIdParams ? Number(productIdParams) : undefined;
+    const userIdParams = searchParams.get('userId');
+    const userId = userIdParams ? Number(userIdParams) : undefined;
 
     if (
       rating !== undefined &&
@@ -31,6 +33,7 @@ export async function GET(request: Request) {
       rating,
       status: status || undefined,
       productId,
+      userId,
     });
 
     return NextResponse.json({

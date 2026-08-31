@@ -1,16 +1,28 @@
 import {z} from 'zod';
 
+const nonEmptyHtml = (value: string | null | undefined) => {
+    if (!value) return false;
+
+    const plainText = value
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return plainText.length > 0;
+};
+
 export const productSchema = z.object({
     category_id: z
         .number()
         .int()
         .positive('Category is required'),
-    
+
     name: z
         .string()
         .min(2,'Product name must be at least 2 characters')
         .max(255),
-    
+
     slug:z
         .string()
         .min(2,'Slug is required')
@@ -22,8 +34,12 @@ export const productSchema = z.object({
 
     description: z
         .string()
-        .optional()
-        .nullable(),
+        .trim()
+        .min(1, 'Description is required')
+        .refine(
+            (value) => nonEmptyHtml(value),
+            'Description is required'
+        ),
 
     short_description: z
         .string()
@@ -71,7 +87,7 @@ export const productSchema = z.object({
     price: z
         .number()
         .nonnegative('Price cannnot be negative'),
-    
+
     compare_at_price: z
         .number()
         .nonnegative()
@@ -96,8 +112,7 @@ export const productSchema = z.object({
                 sort_order: z.number().optional().default(0),
             })
         )
-        .optional()
-        .nullable()
+        .min(1, 'At least one product image is required')
 })
 
 export type ProductInput = z.infer<typeof productSchema>;
