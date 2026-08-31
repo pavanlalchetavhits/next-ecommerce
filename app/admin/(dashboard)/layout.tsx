@@ -19,12 +19,12 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FE] text-[#0F172A] font-sans antialiased">
-      <div className="flex min-h-screen">
+    <div className="h-screen overflow-hidden bg-[#F4F7FE] text-[#0F172A] font-sans antialiased">
+      <div className="flex h-screen">
         <AdminSidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <AdminHeader user={session.user} />
-          <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+          <main className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 max-w-7xl w-full mx-auto">
             {children}
           </main>
         </div>

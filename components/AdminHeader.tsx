@@ -21,7 +21,7 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
       .toUpperCase() || 'AD';
 
   return (
-    <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-[#E9EDF7] bg-white/90 backdrop-blur-md px-8 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-20 shrink-0 items-center justify-between border-b border-[#E9EDF7] bg-white/90 backdrop-blur-md px-8 shadow-sm">
       {/* Search Input Bar */}
       <div className="relative w-full max-w-md">
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
