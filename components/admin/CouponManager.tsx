@@ -718,7 +718,7 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
                     }
                     options={[
                       { value: 'percentage', label: 'Percentage (%)' },
-                      { value: 'fixed', label: 'Fixed Amount ($)' },
+                      { value: 'fixed', label: 'Fixed Amount (₹)' },
                     ]}
                   />
                 </div>
@@ -748,7 +748,7 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                    Min Order Amount ($)
+                    Min Order Amount (₹)
                   </label>
                   <input
                     type="number"
@@ -768,7 +768,7 @@ export default function CouponManager({ coupons }: CouponManagerProps) {
 
                 <div>
                   <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                    Max Discount Cap ($)
+                    Max Discount Cap (₹)
                   </label>
                   <input
                     type="number"

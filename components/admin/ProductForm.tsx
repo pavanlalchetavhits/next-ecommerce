@@ -681,11 +681,11 @@ export default function ProductForm({
             {/* Price */}
             <div>
               <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                Selling Price ($) *
+                Selling Price (₹) *
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold">
-                  $
+                  ₹
                 </span>
                 <input
                   type="number"
@@ -714,11 +714,11 @@ export default function ProductForm({
             {/* Compare at Price */}
             <div>
               <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                Original Price ($) (Optional)
+                Original Price (₹) (Optional)
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] font-bold">
-                  $
+                  ₹
                 </span>
                 <input
                   type="number"
@@ -857,7 +857,7 @@ export default function ProductForm({
                 onChange={(data) =>
                   setFormData({ ...formData, shipping_info: data })
                 }
-                placeholder="e.g. Dispatched within 24 hours. Free standard express delivery on orders over $50."
+                placeholder="e.g. Dispatched within 24 hours. Free standard express delivery on orders over ₹50."
               />
             </div>
           </div>

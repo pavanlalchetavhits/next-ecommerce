@@ -64,7 +64,7 @@ export default function Hero() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">Fast Delivery</h4>
-                  <p className="text-[11px] text-slate-500 leading-tight">Free shipping on orders over $150</p>
+                  <p className="text-[11px] text-slate-500 leading-tight">Free shipping on orders over ₹150</p>
                 </div>
               </div>
 

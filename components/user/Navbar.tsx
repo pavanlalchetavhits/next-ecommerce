@@ -100,7 +100,7 @@ export default function Navbar() {
               <Truck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </span>
             <span className="truncate">
-              Free Express Shipping on orders over <strong className="text-indigo-400 font-bold">$150</strong>
+              Free Express Shipping on orders over <strong className="text-indigo-400 font-bold">₹150</strong>
             </span>
             <span className="hidden md:inline-block text-slate-500">•</span>
             {activeCoupons.length > 0 ? (
@@ -134,7 +134,7 @@ export default function Navbar() {
               <span>FAQ</span>
             </Link>
             <div className="flex items-center gap-1 text-slate-400 border-l border-slate-700 pl-4">
-              <span>USD ($)</span>
+              <span>INR (₹)</span>
               <ChevronDown className="w-3 h-3" />
             </div>
           </div>

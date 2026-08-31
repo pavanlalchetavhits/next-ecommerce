@@ -39,8 +39,8 @@ export default function SettingsManager({ initialSettings }: SettingsManagerProp
     support_email: initialSettings.support_email || 'support@nexcart.com',
     support_phone: initialSettings.support_phone || '+1 (800) 123-4567',
     store_address: initialSettings.store_address || '123 E-Commerce Way, CA 90210',
-    currency: initialSettings.currency || 'USD',
-    currency_symbol: initialSettings.currency_symbol || '$',
+    currency: initialSettings.currency || 'INR',
+    currency_symbol: initialSettings.currency_symbol || '₹',
 
     shipping_fee: initialSettings.shipping_fee || '15.00',
     free_shipping_threshold: initialSettings.free_shipping_threshold || '100.00',
@@ -265,45 +265,12 @@ export default function SettingsManager({ initialSettings }: SettingsManagerProp
               />
             </div>
 
-            <div className="pt-4 border-t border-[#E9EDF7] grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                  Default Currency
-                </label>
-                <MuiSelect
-                  value={settings.currency}
-                  onChange={(e) => {
-                    const cur = e.target.value as string;
-                    const symbols: Record<string, string> = {
-                      USD: '$',
-                      INR: '₹',
-                      EUR: '€',
-                      GBP: '£',
-                    };
-                    handleChange('currency', cur);
-                    if (symbols[cur]) {
-                      handleChange('currency_symbol', symbols[cur]);
-                    }
-                  }}
-                  options={[
-                    { value: 'USD', label: 'USD ($)' },
-                    { value: 'INR', label: 'INR (₹)' },
-                    { value: 'EUR', label: 'EUR (€)' },
-                    { value: 'GBP', label: 'GBP (£)' },
-                  ]}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                  Currency Symbol
-                </label>
-                <input
-                  type="text"
-                  value={settings.currency_symbol}
-                  onChange={(e) => handleChange('currency_symbol', e.target.value)}
-                  className="w-full rounded-xl border border-[#E9EDF7] bg-white p-2.5 text-center text-sm font-extrabold text-[#0F172A] outline-none focus:border-[#6366F1]"
-                />
+            <div className="pt-4 border-t border-[#E9EDF7]">
+              <div className="rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] p-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#707EAE]">
+                  Store Currency
+                </p>
+                <p className="mt-1 text-sm font-extrabold text-[#0F172A]">INR (₹)</p>
               </div>
             </div>
           </div>
@@ -326,7 +293,7 @@ export default function SettingsManager({ initialSettings }: SettingsManagerProp
               <div>
                 <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1 flex items-center gap-1">
                   <DollarSign className="h-3.5 w-3.5 text-[#94A3B8]" />
-                  Standard Shipping Fee ($)
+                  Standard Shipping Fee (₹)
                 </label>
                 <input
                   type="number"
@@ -341,7 +308,7 @@ export default function SettingsManager({ initialSettings }: SettingsManagerProp
               <div>
                 <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1 flex items-center gap-1">
                   <DollarSign className="h-3.5 w-3.5 text-[#94A3B8]" />
-                  Free Shipping Minimum Order ($)
+                  Free Shipping Minimum Order (₹)
                 </label>
                 <input
                   type="number"
@@ -433,7 +400,7 @@ export default function SettingsManager({ initialSettings }: SettingsManagerProp
 
               <div>
                 <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                  Minimum Order Total Amount ($)
+                  Minimum Order Total Amount (₹)
                 </label>
                 <input
                   type="number"

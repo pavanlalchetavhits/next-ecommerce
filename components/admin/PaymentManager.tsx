@@ -124,7 +124,7 @@ export default function PaymentManager({ payments = [] }: PaymentManagerProps) {
             </div>
           </div>
           <p className="mt-2 text-2xl font-extrabold text-[#0F172A]">
-            ${totalVolume.toFixed(2)}
+            ₹{totalVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <p className="mt-1 text-xs text-emerald-600 font-medium">Successful volume</p>
         </div>
@@ -336,7 +336,7 @@ export default function PaymentManager({ payments = [] }: PaymentManagerProps) {
 
                     {/* Amount */}
                     <td className="py-4 px-4 font-black text-[#0F172A] font-mono">
-                      ${Number(pay.amount).toFixed(2)}
+                      ₹{Number(pay.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
                     {/* Status */}
@@ -455,7 +455,7 @@ export default function PaymentManager({ payments = [] }: PaymentManagerProps) {
               <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E9EDF7] space-y-1">
                 <span className="text-[#94A3B8] font-semibold">Amount Charged</span>
                 <p className="font-black text-[#0F172A]">
-                  ${Number(viewingPayment.amount).toFixed(2)}
+                  ₹{Number(viewingPayment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
