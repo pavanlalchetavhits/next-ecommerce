@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Bell, Shield } from 'lucide-react';
+import { Bell, Shield } from 'lucide-react';
 
 type AdminHeaderProps = {
   user: {
@@ -21,17 +21,7 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
       .toUpperCase() || 'AD';
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 shrink-0 items-center justify-between border-b border-[#E9EDF7] bg-white/90 backdrop-blur-md px-8 shadow-sm">
-      {/* Search Input Bar */}
-      <div className="relative w-full max-w-md">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-        <input
-          type="text"
-          placeholder="Search products, orders, categories..."
-          className="w-full rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] py-2.5 pl-10 pr-4 text-sm text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all focus:border-[#6366F1] focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
-        />
-      </div>
-
+    <header className="sticky top-0 z-30 flex h-20 shrink-0 items-center justify-end border-b border-[#E9EDF7] bg-white/90 backdrop-blur-md px-8 shadow-sm">
       {/* Right Side Actions & Profile */}
       <div className="flex items-center gap-4">
         {/* Notification Bell */}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { validatePassword } from '@/lib/validations/user';
 import {
   User,
   Mail,
@@ -29,9 +30,11 @@ import {
   EyeOff,
   Loader2,
   ShoppingBag,
+  Star,
 } from 'lucide-react';
 import { useWishlistStore } from '@/app/store/wishliststore';
 import MuiSelect from '@/components/ui/MuiSelect';
+import ProductReviewModal from '@/components/user/ProductReviewModal';
 import { INDIAN_STATES_AND_DISTRICTS, StateItem } from '@/lib/data/indianStatesDistricts';
 
 type Profile = {
@@ -161,6 +164,16 @@ export default function ProfilePage() {
   const [viewingOrder, setViewingOrder] = useState<OrderDetail | null>(null);
   const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
 
+  // Review Modal state
+  const [reviewModalProduct, setReviewModalProduct] = useState<{
+    id: number;
+    name: string;
+    image?: string | null;
+    variant_name?: string | null;
+  } | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewedProductIds, setReviewedProductIds] = useState<number[]>([]);
+
   // Wishlist count
   const wishlistCount = useWishlistStore((state) => state.count);
 
@@ -183,6 +196,19 @@ export default function ProfilePage() {
       setProfile(data.data);
       setName(data.data.name || '');
       setPhone(data.data.phone || '');
+
+      // Fetch user's submitted reviews
+      if (data.data?.id) {
+        try {
+          const revRes = await fetch(`/api/reviews?userId=${data.data.id}`);
+          const revData = await revRes.json();
+          if (revRes.ok && revData.success && Array.isArray(revData.data)) {
+            setReviewedProductIds(revData.data.map((r: any) => Number(r.product_id)));
+          }
+        } catch (err) {
+          console.error('Fetch user reviews error:', err);
+        }
+      }
 
       // Fetch orders
       try {
@@ -304,8 +330,9 @@ export default function ProfilePage() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters long');
+    const passwordErr = validatePassword(newPassword);
+    if (passwordErr) {
+      setPasswordError(passwordErr);
       return;
     }
 
@@ -818,6 +845,8 @@ export default function ProfilePage() {
                         ? 'bg-red-50 text-red-700 border-red-200'
                         : 'bg-amber-50 text-amber-700 border-amber-200';
 
+                    const isDelivered = ord.status?.toLowerCase() === 'delivered';
+
                     return (
                       <div
                         key={ord.id}
@@ -840,10 +869,25 @@ export default function ProfilePage() {
                           </p>
                         </div>
 
-                        <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                           <span className="text-sm font-extrabold text-slate-900">
                             ₹{Number(ord.total_amount).toLocaleString('en-IN')}
                           </span>
+
+                          {isDelivered && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openOrderDetails(ord);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#5b46f6]/30 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-[#5b46f6] backdrop-blur-sm transition-all duration-200 hover:bg-[#5b46f6] hover:text-white hover:border-[#5b46f6] active:scale-95 shrink-0 cursor-pointer shadow-2xs group/btn"
+                            >
+                              <Star className="h-3.5 w-3.5 text-[#5b46f6] transition-colors group-hover/btn:text-white" />
+                              <span>Write Review</span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1004,9 +1048,9 @@ export default function ProfilePage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
-                      minLength={6}
+                      minLength={8}
                       className="w-full rounded-2xl border border-slate-200 py-3 pl-10 pr-10 text-xs font-semibold text-slate-900 focus:border-[#5b46f6] focus:outline-none focus:ring-2 focus:ring-purple-100"
-                      placeholder="Minimum 6 characters"
+                      placeholder="Min 8 chars (1 upper, 1 lower, 1 number)"
                     />
                     <button
                       type="button"
@@ -1396,9 +1440,7 @@ export default function ProfilePage() {
               <div className="space-y-3">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
                   Purchased Line Items
-                </h4>
-
-                {loadingOrderDetails ? (
+                </h4>                {loadingOrderDetails ? (
                   <div className="py-8 text-center text-xs font-semibold text-[#5b46f6] flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Loading order items...</span>
@@ -1434,9 +1476,37 @@ export default function ProfilePage() {
                           </div>
                         </div>
 
-                        <span className="text-xs font-extrabold text-slate-900 shrink-0">
-                          ₹{Number(item.total_price || item.unit_price * item.quantity).toLocaleString('en-IN')}
-                        </span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          {viewingOrder.status?.toLowerCase() === 'delivered' && profile && (
+                            reviewedProductIds.includes(Number(item.product_id)) ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-extrabold text-emerald-700 shadow-2xs">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                <span>Reviewed</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReviewModalProduct({
+                                    id: item.product_id,
+                                    name: item.product_name,
+                                    image: item.product_image,
+                                    variant_name: item.variant_name,
+                                  });
+                                  setShowReviewModal(true);
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-[#5b46f6]/30 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-[#5b46f6] backdrop-blur-sm transition-all duration-200 hover:bg-[#5b46f6] hover:text-white hover:border-[#5b46f6] active:scale-95 shrink-0 cursor-pointer shadow-2xs group/btn"
+                              >
+                                <Star className="h-3.5 w-3.5 text-[#5b46f6] transition-colors group-hover/btn:text-white" />
+                                <span>Write Review</span>
+                              </button>
+                            )
+                          )}
+
+                          <span className="text-xs font-extrabold text-slate-900">
+                            ₹{Number(item.total_price || item.unit_price * item.quantity).toLocaleString('en-IN')}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1483,6 +1553,21 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Product Review Modal */}
+      {profile && (
+        <ProductReviewModal
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          userId={profile.id}
+          product={reviewModalProduct}
+          onReviewSubmitted={() => {
+            if (reviewModalProduct) {
+              setReviewedProductIds((prev) => [...prev, reviewModalProduct.id]);
+            }
+          }}
+        />
       )}
     </div>
   );

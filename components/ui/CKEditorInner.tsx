@@ -250,6 +250,44 @@ export default function CKEditorInner({
           font-size: 0.875rem;
           color: #0f172a;
         }
+        .ck-editor__editable_inline ul,
+        .ck-content ul {
+          list-style-type: disc !important;
+          padding-left: 1.75rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        .ck-editor__editable_inline ol,
+        .ck-content ol {
+          list-style-type: decimal !important;
+          padding-left: 1.75rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        .ck-editor__editable_inline li,
+        .ck-content li {
+          margin-bottom: 0.375rem !important;
+          line-height: 1.6 !important;
+        }
+        .ck-editor__editable_inline ul ul,
+        .ck-content ul ul {
+          list-style-type: circle !important;
+          padding-left: 1.5rem !important;
+          margin-top: 0.25rem !important;
+          margin-bottom: 0.25rem !important;
+        }
+        .ck-editor__editable_inline ol ol,
+        .ck-content ol ol {
+          list-style-type: lower-alpha !important;
+          padding-left: 1.5rem !important;
+          margin-top: 0.25rem !important;
+          margin-bottom: 0.25rem !important;
+        }
+        .ck-editor__editable_inline p,
+        .ck-content p {
+          margin-bottom: 0.5rem !important;
+          line-height: 1.6 !important;
+        }
         .ck-editor__editable_inline h1 {
           font-size: 1.875rem !important;
           font-weight: 800 !important;

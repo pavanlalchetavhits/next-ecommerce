@@ -325,7 +325,7 @@ export default function RegisterPage() {
               id="register-password"
               name="password"
               label="Password"
-              placeholder="Create password (min 6 chars)"
+              placeholder="Min 8 chars (1 upper, 1 lower, 1 number)"
               type={showPassword ? 'text' : 'password'}
               fullWidth
               required

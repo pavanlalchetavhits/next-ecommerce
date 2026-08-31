@@ -13,6 +13,7 @@ import {
   Sparkles,
   ArrowRight,
   Filter,
+  Star,
 } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 
@@ -260,17 +261,27 @@ export default function MyOrdersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-5 pt-3 sm:pt-0 border-t sm:border-t-0 border-purple-50">
-                  <div className="text-left sm:text-right">
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-purple-50">
+                  <div className="text-left sm:text-right mr-2">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Amount</p>
                     <p className="text-base font-extrabold text-slate-900">
                       ₹{Number(ord.total_amount).toLocaleString('en-IN')}
                     </p>
                   </div>
 
+                  {ord.status?.toLowerCase() === 'delivered' && (
+                    <Link
+                      href={`/orders/${ord.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#5b46f6]/30 bg-white/80 px-3.5 py-2 text-xs font-semibold text-[#5b46f6] backdrop-blur-sm transition-all duration-200 hover:bg-[#5b46f6] hover:text-white hover:border-[#5b46f6] active:scale-95 shrink-0 cursor-pointer shadow-2xs group/btn"
+                    >
+                      <Star className="h-3.5 w-3.5 text-[#5b46f6] transition-colors group-hover/btn:text-white" />
+                      <span>Write Review</span>
+                    </Link>
+                  )}
+
                   <Link
                     href={`/orders/${ord.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 border border-purple-100 px-4 py-2.5 text-xs font-bold text-[#5b46f6] hover:bg-[#5b46f6] hover:text-white transition-all shadow-2xs"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 border border-purple-100 px-4 py-2 text-xs font-bold text-[#5b46f6] hover:bg-[#5b46f6] hover:text-white transition-all shadow-2xs"
                   >
                     <span>View Order</span>
                     <ChevronRight className="h-4 w-4" />

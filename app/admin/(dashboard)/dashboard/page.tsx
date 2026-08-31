@@ -12,6 +12,7 @@ import {
   AlertCircle,
   FolderTree,
   Inbox,
+  Boxes,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -222,13 +223,13 @@ export default async function AdminDashboard() {
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
-                    <Users className="h-4 w-4" />
+                    <Boxes className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[#0F172A]">
-                      Customers ({stats.usersCount})
+                      Inventory ({stats.productsCount})
                     </p>
-                    <p className="text-xs text-[#94A3B8]">Registered accounts</p>
+                    <p className="text-xs text-[#94A3B8]">Stock & inventory logs</p>
                   </div>
                 </div>
                 <ArrowUpRight className="h-4 w-4 text-[#94A3B8]" />

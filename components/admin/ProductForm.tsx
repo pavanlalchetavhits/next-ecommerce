@@ -230,10 +230,11 @@ export default function ProductForm({
           },
         ]);
       }
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Failed to upload image. Try adding URL.'
-      );
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed to upload image. Try adding URL.';
+      setError(errorMessage);
     } finally {
       setUploadingImage(false);
       e.target.value = '';
@@ -294,16 +295,18 @@ export default function ProductForm({
       newFieldErrors.category_id = 'Please select a valid category';
     }
 
-    if (
-      !formData.price ||
-      isNaN(parseFloat(formData.price)) ||
-      parseFloat(formData.price) <= 0
-    ) {
-      newFieldErrors.price = 'Selling price is required (must be greater than 0)';
+    const descriptionText = formData.description
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!descriptionText) {
+      newFieldErrors.description = 'Product description is required';
     }
 
-    if (!formData.sku.trim()) {
-      newFieldErrors.sku = 'Stock SKU code is required';
+    if (!images.length) {
+      newFieldErrors.images = 'At least one product image is required';
     }
 
     if (Object.keys(newFieldErrors).length > 0) {
@@ -369,10 +372,19 @@ export default function ProductForm({
           : 'Product created & published successfully!'
       );
       setTimeout(() => router.push('/admin/products'), 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorResponse = err as {
+        response?: {
+          data?: {
+            message?: string;
+            errors?: unknown;
+          };
+        };
+      };
+
       setError(
-        err.response?.data?.message ||
-        (err.response?.data?.errors
+        errorResponse.response?.data?.message ||
+        (errorResponse.response?.data?.errors
           ? 'Please check input fields and format.'
           : 'Failed to save product.')
       );
@@ -525,7 +537,7 @@ export default function ProductForm({
             {/* Full Description */}
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-[#0F172A] uppercase mb-1">
-                Full Description
+                Full Description *
               </label>
               <CKEditorWrapper
                 value={formData.description}
@@ -534,6 +546,12 @@ export default function ProductForm({
                 }
                 placeholder="Enter detailed product specifications, features, and overview..."
               />
+              {fieldErrors.description && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>{fieldErrors.description}</span>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -612,6 +630,13 @@ export default function ProductForm({
               </p>
             </div>
           </div>
+
+          {fieldErrors.images && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>{fieldErrors.images}</span>
+            </p>
+          )}
 
           {/* Uploaded Gallery Grid */}
           {images.length > 0 && (

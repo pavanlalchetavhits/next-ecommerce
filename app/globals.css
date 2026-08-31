@@ -121,4 +121,28 @@ code, pre, .font-mono, .tabular-nums {
   background: rgba(91, 70, 246, 0.5);
 }
 
+/* Global CKEditor & Rich Text Lists Spacing Fix */
+.ck-content ul,
+.ck-editor__editable_inline ul {
+  list-style-type: disc !important;
+  padding-left: 1.75rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.ck-content ol,
+.ck-editor__editable_inline ol {
+  list-style-type: decimal !important;
+  padding-left: 1.75rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.ck-content li,
+.ck-editor__editable_inline li {
+  margin-bottom: 0.375rem !important;
+  line-height: 1.6 !important;
+}
+
+
 
