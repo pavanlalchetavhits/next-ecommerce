@@ -416,8 +416,21 @@ export default function OrderManager({ orders }: OrderManagerProps) {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full rounded-xl border border-[#E9EDF7] bg-white py-2.5 pl-10 pr-4 text-xs text-[#0F172A] placeholder-[#94A3B8] outline-none shadow-sm transition-all focus:border-[#6366F1]"
+            className="w-full rounded-xl border border-[#E9EDF7] bg-white py-2.5 pl-10 pr-10 text-xs text-[#0F172A] placeholder-[#94A3B8] outline-none shadow-sm transition-all focus:border-[#6366F1]"
           />
+          {search && (
+            <button
+              type="button"
+              aria-label="Clear order search"
+              onClick={() => {
+                setSearch('');
+                setCurrentPage(1);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#64748B] transition-colors hover:bg-slate-100 hover:text-[#0F172A]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 

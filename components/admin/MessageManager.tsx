@@ -231,8 +231,21 @@ export default function MessageManager() {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-[#A3AED0] outline-none focus:border-[#6366F1] focus:bg-white transition-all"
+            className="w-full rounded-xl border border-[#E9EDF7] bg-[#F8FAFC] pl-10 pr-10 py-2 text-xs text-[#0F172A] placeholder-[#A3AED0] outline-none focus:border-[#6366F1] focus:bg-white transition-all"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              aria-label="Clear message search"
+              onClick={() => {
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#64748B] transition-colors hover:bg-slate-100 hover:text-[#0F172A]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
