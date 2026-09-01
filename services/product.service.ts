@@ -1,4 +1,5 @@
 import db from '@/lib/db';
+import { cacheLife, cacheTag } from 'next/cache';
 import { ProductInput } from '@/lib/validations/products';
 import { syncProductImages } from '@/services/product-image.service';
 
@@ -10,6 +11,16 @@ export interface ProductFilters {
   page?: number;
   limit?: number;
   paginate?: boolean;
+}
+
+/**
+ * Cached Products Getter using Next.js 'use cache' directive
+ */
+export async function getCachedProducts(filters: ProductFilters = {}) {
+  'use cache';
+  cacheTag('products');
+  cacheLife('minutes');
+  return getProducts(filters);
 }
 
 export async function getProducts(filters: ProductFilters = {}) {
