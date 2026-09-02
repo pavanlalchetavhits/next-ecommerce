@@ -24,34 +24,57 @@ export interface StoreSettings {
   [key: string]: string | undefined;
 }
 
+// Global in-memory cache to prevent duplicate HTTP requests across multiple component mounts
+let settingsCache: StoreSettings | null = null;
+let settingsPromise: Promise<StoreSettings> | null = null;
+
+async function loadSettings(): Promise<StoreSettings> {
+  if (settingsCache) return settingsCache;
+  if (settingsPromise) return settingsPromise;
+
+  settingsPromise = api
+    .get('/api/settings')
+    .then((res) => {
+      const data = res.data?.data || res.data || {};
+      settingsCache = data;
+      settingsPromise = null;
+      return data;
+    })
+    .catch((err) => {
+      settingsPromise = null;
+      throw err;
+    });
+
+  return settingsPromise;
+}
+
 export function useSettings() {
-  const [settings, setSettings] = useState<StoreSettings>({});
-  const [loading, setLoading] = useState<boolean>(true);
+  const [settings, setSettings] = useState<StoreSettings>(settingsCache || {});
+  const [loading, setLoading] = useState<boolean>(!settingsCache);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchSettings() {
-      try {
-        setLoading(true);
-        const res = await api.get('/api/settings');
-        if (isMounted) {
-          const data = res.data?.data || res.data || {};
-          setSettings(data);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.response?.data?.message || 'Failed to load site settings');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+    if (settingsCache) {
+      setSettings(settingsCache);
+      setLoading(false);
+      return;
     }
 
-    fetchSettings();
+    loadSettings()
+      .then((data) => {
+        if (isMounted) {
+          setSettings(data);
+          setLoading(false);
+        }
+      })
+      .catch((err: any) => {
+        if (isMounted) {
+          setError(err.response?.data?.message || 'Failed to load site settings');
+          setLoading(false);
+        }
+      });
 
     return () => {
       isMounted = false;

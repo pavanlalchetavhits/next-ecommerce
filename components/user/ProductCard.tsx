@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Heart, Sparkles, ShoppingBag } from 'lucide-react';
-import { useWishlistStore } from '@/app/store/wishliststore';
+import { ArrowRight, Heart, Sparkles } from 'lucide-react';
+import { useWishlist } from '@/app/hooks';
 
 type Product = {
   id: number;
@@ -26,72 +26,15 @@ export default function ProductCard({
   product: Product;
 }) {
   const [imgErr, setImgErr] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const { isInWishlist, toggleWishlist, actionLoadingId } = useWishlist();
 
-  const addWishlistId = useWishlistStore((state) => state.addWishlistId);
-  const removeWishlistId = useWishlistStore((state) => state.removeWishlistId);
-
-  useEffect(() => {
-    async function checkWishlist() {
-      try {
-        const res = await fetch(`/api/wishlist/check/${product.id}`);
-        const data = await res.json();
-        if (data.success && data.data?.isWishlisted) {
-          setIsWishlisted(true);
-          addWishlistId(product.id);
-        }
-      } catch (err) {
-        console.error('Wishlist check error:', err);
-      }
-    }
-    if (product.id) {
-      checkWishlist();
-    }
-  }, [product.id, addWishlistId]);
+  const isWishlisted = isInWishlist(product.id);
+  const wishlistLoading = actionLoadingId === product.id;
 
   const handleToggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (wishlistLoading) return;
-    setWishlistLoading(true);
-
-    try {
-      if (isWishlisted) {
-        const res = await fetch(`/api/wishlist/${product.id}`, {
-          method: 'DELETE',
-        });
-        const data = await res.json();
-        if (res.status === 401) {
-          window.location.href = `/login?callbackUrl=/product/${product.slug || product.id}`;
-          return;
-        }
-        if (res.ok && data.success) {
-          setIsWishlisted(false);
-          removeWishlistId(product.id);
-        }
-      } else {
-        const res = await fetch('/api/wishlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product_id: product.id }),
-        });
-        const data = await res.json();
-        if (res.status === 401) {
-          window.location.href = `/login?callbackUrl=/product/${product.slug || product.id}`;
-          return;
-        }
-        if (res.ok && data.success) {
-          setIsWishlisted(true);
-          addWishlistId(product.id);
-        }
-      }
-    } catch (err) {
-      console.error('Wishlist toggle error:', err);
-    } finally {
-      setWishlistLoading(false);
-    }
+    await toggleWishlist(product.id);
   };
 
   const rawImageSrc = product.primary_image || product.mainImage || product.image_url;

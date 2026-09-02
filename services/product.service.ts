@@ -87,12 +87,7 @@ export async function getProducts(filters: ProductFilters = {}) {
         p.category_id,
         p.name,
         p.slug,
-        p.description,
         p.short_description,
-        p.care_instructions,
-        p.specifications,
-        p.shipping_info,
-        p.faq,
         p.sku,
         p.price,
         p.compare_at_price,
@@ -100,19 +95,26 @@ export async function getProducts(filters: ProductFilters = {}) {
         p.featured,
         p.created_at,
         p.updated_at,
-        COALESCE((select sum(quantity) from inventory where product_id = p.id), 0) as stock_quantity,
         c.name as category_name,
-        (
-            select pi.image_url
-            from product_images pi
-            where pi.product_id = p.id
-            order by pi.is_primary desc, pi.sort_order asc, pi.id asc
-            limit 1
-        ) as primary_image
+        COALESCE(inv.stock_quantity, 0) as stock_quantity,
+        img.image_url as primary_image
     from products p
-
     left join categories c
         ON p.category_id = c.id
+    left join (
+        select product_id, SUM(quantity) as stock_quantity
+        from inventory
+        group by product_id
+    ) inv ON inv.product_id = p.id
+    left join (
+        select pi1.product_id, pi1.image_url
+        from product_images pi1
+        inner join (
+            select product_id, MIN(id) as min_id
+            from product_images
+            group by product_id
+        ) pi2 ON pi1.id = pi2.min_id
+    ) img ON img.product_id = p.id
     ${whereSql}
     ${orderBySql}
     ${limitSql}
