@@ -4,11 +4,16 @@ import React from 'react';
 import Link from 'next/link';
 import { ShieldCheck, ShoppingBag, MapPin, CreditCard, CheckCircle2, ArrowLeft, Lock } from 'lucide-react';
 
+import { useSettings } from '@/app/hooks';
+
 interface CheckoutHeaderProps {
   currentStep?: 'shipping' | 'payment' | 'confirmation';
 }
 
 export default function CheckoutHeader({ currentStep = 'payment' }: CheckoutHeaderProps) {
+  const { settings } = useSettings();
+  const storeName = settings.store_name || 'NexCart';
+
   const steps = [
     { id: 'cart', label: 'Shopping Bag', icon: ShoppingBag, status: 'completed' },
     { id: 'shipping', label: 'Shipping Address', icon: MapPin, status: currentStep === 'shipping' ? 'current' : 'completed' },
@@ -37,7 +42,7 @@ export default function CheckoutHeader({ currentStep = 'payment' }: CheckoutHead
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight font-display">
-                  Nex<span className="text-indigo-600 dark:text-indigo-400">Cart</span>
+                  {storeName}
                 </span>
                 <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
                   Secure Checkout

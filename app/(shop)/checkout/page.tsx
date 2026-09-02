@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useCartStore } from "@/app/store/cartstore";
 import {
   ShoppingBag,
@@ -29,6 +28,7 @@ import {
 import axios from "axios";
 import MuiSelect from "@/components/ui/MuiSelect";
 import { INDIAN_STATES_AND_DISTRICTS, StateItem } from "@/lib/data/indianStatesDistricts";
+import { useSettings, useAuth } from "@/app/hooks";
 
 type Address = {
   id: number;
@@ -46,7 +46,7 @@ type Address = {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { data: session, status: sessionStatus } = useSession();
+  const { session, status: sessionStatus } = useAuth();
 
   const items = useCartStore((state) => state.items);
   const getSubtotal = useCartStore((state) => state.getSubtotal);
@@ -84,8 +84,12 @@ export default function CheckoutPage() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState("");
 
+  const { settings } = useSettings();
+  const shippingFee = Number(settings.shipping_fee || '100');
+  const freeThreshold = Number(settings.free_shipping_threshold || '2000');
+
   const subtotal = getSubtotal();
-  const shipping = subtotal >= 2000 || subtotal === 0 ? 0 : 100;
+  const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : shippingFee;
   const tax = 0;
   const total = Math.max(0, subtotal + shipping + tax - couponDiscount);
 

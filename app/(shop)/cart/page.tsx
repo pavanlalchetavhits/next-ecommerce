@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCartStore } from '@/app/store/cartstore';
+import { useCart, useSettings } from '@/app/hooks';
 import {
   ShoppingBag,
   Trash2,
@@ -14,10 +14,22 @@ import {
 } from 'lucide-react';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, getSubtotal, clearCart } = useCartStore();
-  const subtotal = getSubtotal();
+  const { items, removeItem, updateQuantity, subtotal, clearCart, isEmpty, isHydrated } = useCart();
+  const { settings } = useSettings();
 
-  if (items.length === 0) {
+  const shippingFee = Number(settings.shipping_fee || '100');
+  const freeThreshold = Number(settings.free_shipping_threshold || '2000');
+
+  const isFreeShipping = subtotal >= freeThreshold || subtotal === 0;
+  const shippingCost = isFreeShipping ? 0 : shippingFee;
+  const totalAmount = subtotal + shippingCost;
+  const remainingForFreeShipping = freeThreshold - subtotal;
+
+  if (!isHydrated) {
+    return <div className="min-h-screen py-20 text-center text-xs font-bold text-slate-400">Loading cart...</div>;
+  }
+
+  if (isEmpty) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 text-[#5b46f6] mx-auto mb-5">
@@ -148,10 +160,23 @@ export default function CartPage() {
                   ₹{subtotal.toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>Estimated Shipping</span>
-                <span className="font-bold text-emerald-600">FREE</span>
+                {isFreeShipping ? (
+                  <span className="font-bold text-emerald-600">FREE</span>
+                ) : (
+                  <span className="font-extrabold text-slate-900">
+                    ₹{shippingCost.toLocaleString('en-IN')}
+                  </span>
+                )}
               </div>
+
+              {!isFreeShipping && remainingForFreeShipping > 0 && (
+                <div className="rounded-lg bg-indigo-50/80 p-2 text-[11px] font-semibold text-indigo-700">
+                  Add <span className="font-extrabold">₹{remainingForFreeShipping.toLocaleString('en-IN')}</span> more to get <span className="font-extrabold text-emerald-600">FREE Shipping</span>!
+                </div>
+              )}
+
               <div className="flex justify-between">
                 <span>Taxes & Duties</span>
                 <span className="font-medium text-slate-400">Calculated at checkout</span>
@@ -159,7 +184,7 @@ export default function CartPage() {
               <div className="flex justify-between pt-3 border-t border-purple-100 text-sm font-extrabold text-slate-900">
                 <span>Total Amount</span>
                 <span className="text-[#5b46f6]">
-                  ₹{subtotal.toLocaleString('en-IN')}
+                  ₹{totalAmount.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
