@@ -80,7 +80,7 @@ export default function WishlistPage() {
     }
   }
 
-  function handleAddToCart(item: WishlistProduct) {
+  async function handleAddToCart(item: WishlistProduct) {
     const isOutOfStock = item.stock_quantity !== undefined && Number(item.stock_quantity) <= 0;
     if (isOutOfStock) return;
 
@@ -94,10 +94,8 @@ export default function WishlistPage() {
       stock: Number(item.stock_quantity ?? 99),
     });
 
-    setAddedItemsMap((prev) => ({ ...prev, [item.product_id]: true }));
-    setTimeout(() => {
-      setAddedItemsMap((prev) => ({ ...prev, [item.product_id]: false }));
-    }, 2000);
+    // Remove item from wishlist database & UI state
+    await removeWishlist(item.product_id);
   }
 
   if (loading) {

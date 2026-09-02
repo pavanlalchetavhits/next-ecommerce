@@ -16,6 +16,7 @@ import {
   Star,
 } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
+import { useFetch } from '@/app/hooks';
 
 type OrderItem = {
   id: number;
@@ -33,40 +34,10 @@ const ITEMS_PER_PAGE = 10;
 export default function MyOrdersPage() {
   const router = useRouter();
 
-  const [orders, setOrders] = useState<OrderItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data: ordersData, loading, error } = useFetch<OrderItem[]>('/api/orders');
+  const orders = Array.isArray(ordersData) ? ordersData : [];
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-
-  async function fetchUserOrders() {
-    try {
-      setLoading(true);
-      setError('');
-
-      const res = await fetch('/api/orders');
-      if (res.status === 401) {
-        router.push('/login?callbackUrl=/orders');
-        return;
-      }
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to fetch orders');
-      }
-
-      setOrders(data.data || []);
-    } catch (err: any) {
-      console.error('My orders fetch error:', err);
-      setError(err.message || 'Failed to load order history');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchUserOrders();
-  }, []);
 
   const filteredOrders = orders.filter((o) => {
     if (statusFilter !== 'all' && o.status !== statusFilter) {

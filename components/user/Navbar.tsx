@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -17,7 +17,7 @@ import {
   Heart,
   Compass,
 } from 'lucide-react';
-import { useCart, useWishlist, useAuth } from '@/app/hooks';
+import { useCart, useWishlist, useAuth, useClickOutside, useFetch } from '@/app/hooks';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -26,27 +26,17 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  useClickOutside(mobileMenuRef, () => setMobileMenuOpen(false));
+
   // Dynamic Cart and Wishlist count from custom hooks
-  const { totalItems: cartCount } = useCart();
+  const { uniqueCount: cartCount } = useCart();
   const { count: wishlistCount } = useWishlist();
 
-  const [activeCoupons, setActiveCoupons] = useState<any[]>([]);
+  // Fetch active coupons using custom useFetch hook
+  const { data: couponsData } = useFetch<any[]>('/api/coupons?status=active');
+  const activeCoupons = Array.isArray(couponsData) ? couponsData : [];
   const [couponIndex, setCouponIndex] = useState(0);
-
-  useEffect(() => {
-    async function fetchCoupons() {
-      try {
-        const res = await fetch(`/api/coupons?status=active&t=${Date.now()}`);
-        const data = await res.json();
-        if (res.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setActiveCoupons(data.data);
-        }
-      } catch (err) {
-        console.error('Navbar coupon fetch error:', err);
-      }
-    }
-    fetchCoupons();
-  }, []);
 
   useEffect(() => {
     if (activeCoupons.length <= 1) return;
@@ -233,7 +223,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 animate-in slide-in-from-top duration-300">
+        <div ref={mobileMenuRef} className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 animate-in slide-in-from-top duration-300">
           <div className="p-4 space-y-4">
             {/* Mobile Nav Links */}
             <nav className="flex flex-col space-y-1">
