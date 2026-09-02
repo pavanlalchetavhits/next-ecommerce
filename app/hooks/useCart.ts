@@ -24,6 +24,7 @@ export function useCart() {
   const subtotal = isHydrated ? getSubtotal() : 0;
   const totalItems = isHydrated ? getTotalItems() : 0;
   const cartItems = isHydrated ? items : [];
+  const uniqueCount = cartItems.length;
   const isEmpty = cartItems.length === 0;
 
   const isInCart = (productId: number, variantId?: number): boolean => {
@@ -42,6 +43,7 @@ export function useCart() {
   return {
     items: cartItems,
     totalItems,
+    uniqueCount,
     subtotal,
     isEmpty,
     isHydrated,

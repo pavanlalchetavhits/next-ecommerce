@@ -19,10 +19,13 @@ export default function CartPage() {
 
   const shippingFee = Number(settings.shipping_fee || '100');
   const freeThreshold = Number(settings.free_shipping_threshold || '2000');
+  const enableTax = settings.enable_tax !== 'false';
+  const taxRate = Number(settings.tax_rate || '5');
 
   const isFreeShipping = subtotal >= freeThreshold || subtotal === 0;
   const shippingCost = isFreeShipping ? 0 : shippingFee;
-  const totalAmount = subtotal + shippingCost;
+  const estimatedTax = enableTax ? Math.round((subtotal * (taxRate / 100)) * 100) / 100 : 0;
+  const totalAmount = subtotal + shippingCost + estimatedTax;
   const remainingForFreeShipping = freeThreshold - subtotal;
 
   if (!isHydrated) {
@@ -178,8 +181,10 @@ export default function CartPage() {
               )}
 
               <div className="flex justify-between">
-                <span>Taxes & Duties</span>
-                <span className="font-medium text-slate-400">Calculated at checkout</span>
+                <span>Taxes & Duties ({enableTax ? `${taxRate}%` : 'Disabled'})</span>
+                <span className="font-extrabold text-slate-900">
+                  {enableTax && estimatedTax > 0 ? `₹${estimatedTax.toLocaleString('en-IN')}` : '₹0'}
+                </span>
               </div>
               <div className="flex justify-between pt-3 border-t border-purple-100 text-sm font-extrabold text-slate-900">
                 <span>Total Amount</span>

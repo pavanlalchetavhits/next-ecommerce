@@ -5,5 +5,7 @@ export { useCart } from './useCart';
 export { useWishlist } from './useWishlist';
 export { useAuth } from './useAuth';
 export { useCopyToClipboard } from './useCopyToClipboard';
+export { useClickOutside } from './useClickOutside';
+export { useFetch } from './useFetch';
 export type { CartItem } from './useCart';
 export type { AuthUser } from './useAuth';

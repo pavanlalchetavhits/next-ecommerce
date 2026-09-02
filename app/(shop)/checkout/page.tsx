@@ -87,10 +87,13 @@ export default function CheckoutPage() {
   const { settings } = useSettings();
   const shippingFee = Number(settings.shipping_fee || '100');
   const freeThreshold = Number(settings.free_shipping_threshold || '2000');
+  const enableTax = settings.enable_tax !== 'false';
+  const taxRate = Number(settings.tax_rate || '5');
 
   const subtotal = getSubtotal();
   const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : shippingFee;
-  const tax = 0;
+  const taxableBase = Math.max(0, subtotal - couponDiscount);
+  const tax = enableTax ? Math.round((taxableBase * (taxRate / 100)) * 100) / 100 : 0;
   const total = Math.max(0, subtotal + shipping + tax - couponDiscount);
 
   /*
@@ -1061,6 +1064,12 @@ export default function CheckoutPage() {
               <div className="flex justify-between">
                 <span>Shipping Fee</span>
                 <span className="font-bold text-emerald-600">{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Taxes & Duties ({enableTax ? `${taxRate}%` : 'Disabled'})</span>
+                <span className="font-bold text-slate-900">
+                  {enableTax && tax > 0 ? `₹${tax.toLocaleString("en-IN")}` : '₹0'}
+                </span>
               </div>
               {couponDiscount > 0 && (
                 <div className="flex items-center justify-between text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-100">
