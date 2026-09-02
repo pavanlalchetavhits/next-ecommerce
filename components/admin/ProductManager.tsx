@@ -18,6 +18,8 @@ import {
 import api from '@/lib/axios';
 import Pagination from '@/components/ui/Pagination';
 
+import { useDebounce} from '@/app/hooks/useDebounce';
+
 export interface ProductItem {
   id: number;
   category_id: number;
@@ -47,6 +49,7 @@ export default function ProductManager({ products }: ProductManagerProps) {
   const router = useRouter();
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search,300);
   const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -59,10 +62,10 @@ export default function ProductManager({ products }: ProductManagerProps) {
   // Filter products by search term
   const filteredProducts = products.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase()) ||
+      p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      p.sku.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       (p.category_name &&
-        p.category_name.toLowerCase().includes(search.toLowerCase()))
+        p.category_name.toLowerCase().includes(debouncedSearch.toLowerCase()))
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));

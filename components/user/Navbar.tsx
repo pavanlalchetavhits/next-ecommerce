@@ -17,26 +17,18 @@ import {
   Heart,
   Compass,
 } from 'lucide-react';
-import { useCartStore } from '@/app/store/cartstore';
-import { useWishlistStore } from '@/app/store/wishliststore';
-
-import { useSession } from 'next-auth/react';
+import { useCart, useWishlist, useAuth } from '@/app/hooks';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Dynamic Cart unique items count from Zustand store
-  const items = useCartStore((state) => state.items);
-  const [cartCount, setCartCount] = useState(0);
-
-  // Dynamic Wishlist count from Zustand store
-  const wishlistCount = useWishlistStore((state) => state.count);
-  const fetchWishlist = useWishlistStore((state) => state.fetchWishlist);
+  // Dynamic Cart and Wishlist count from custom hooks
+  const { totalItems: cartCount } = useCart();
+  const { count: wishlistCount } = useWishlist();
 
   const [activeCoupons, setActiveCoupons] = useState<any[]>([]);
   const [couponIndex, setCouponIndex] = useState(0);
@@ -63,14 +55,6 @@ export default function Navbar() {
     }, 4000);
     return () => clearInterval(timer);
   }, [activeCoupons]);
-
-  useEffect(() => {
-    fetchWishlist();
-  }, [fetchWishlist]);
-
-  useEffect(() => {
-    setCartCount((items || []).length);
-  }, [items]);
 
   useEffect(() => {
     const handleScroll = () => {

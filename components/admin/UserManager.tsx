@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 
+import { useDebounce } from '@/app/hooks';
+
 interface Customer {
   id: number;
   name: string;
@@ -78,18 +80,11 @@ export default function UserManager() {
   const [statusTarget, setStatusTarget] = useState<Customer | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
+  const debouncedSearch = useDebounce(search, 400);
+
   useEffect(() => {
     fetchCustomers();
-  }, [page, limit, statusFilter]);
-
-  // Debounced search trigger
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-      fetchCustomers();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [search]);
+  }, [page, limit, statusFilter, debouncedSearch]);
 
   async function fetchCustomers() {
     try {
@@ -99,7 +94,7 @@ export default function UserManager() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        search: search.trim(),
+        search: debouncedSearch.trim(),
         status: statusFilter,
       });
 

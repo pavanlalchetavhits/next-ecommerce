@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import Pagination from '@/components/ui/Pagination';
+import { useDebounce } from '@/app/hooks';
 
 export interface ReviewItem {
   id: number;
@@ -44,6 +45,7 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
   const router = useRouter();
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [ratingFilter, setRatingFilter] = useState<number | 'all'>('all');
 
@@ -71,11 +73,11 @@ export default function ReviewManager({ reviews }: ReviewManagerProps) {
   // Filtered Reviews
   const filteredReviews = reviews.filter((r) => {
     const matchesSearch =
-      (r.customer_name && r.customer_name.toLowerCase().includes(search.toLowerCase())) ||
-      (r.customer_email && r.customer_email.toLowerCase().includes(search.toLowerCase())) ||
-      (r.product_name && r.product_name.toLowerCase().includes(search.toLowerCase())) ||
-      (r.title && r.title.toLowerCase().includes(search.toLowerCase())) ||
-      (r.comment && r.comment.toLowerCase().includes(search.toLowerCase()));
+      (r.customer_name && r.customer_name.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+      (r.customer_email && r.customer_email.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+      (r.product_name && r.product_name.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+      (r.title && r.title.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+      (r.comment && r.comment.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
     if (!matchesSearch) return false;
 
