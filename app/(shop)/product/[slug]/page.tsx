@@ -32,11 +32,21 @@ export default async function ProductDetailPage({
     );
   }
 
-  // Fetch related products in the same category
-  const allProducts = await getProducts({ category_id: product.category_id });
-  const relatedProducts = Array.isArray(allProducts)
-    ? (allProducts as any[]).filter((p) => p.id !== product.id)
-    : [];
+  // Fetch max 6 related products in the same category for fast loading
+  const relatedResult: any = await getProducts({
+    category_id: product.category_id,
+    limit: 6,
+    page: 1,
+    paginate: true,
+  });
+  const rawRelatedList =
+    relatedResult && typeof relatedResult === 'object' && 'products' in relatedResult
+      ? relatedResult.products
+      : Array.isArray(relatedResult)
+      ? relatedResult
+      : [];
+
+  const relatedProducts = (rawRelatedList as any[]).filter((p) => p.id !== product.id).slice(0, 4);
 
   return <ProductDetailClient product={product} relatedProducts={relatedProducts} />;
 }

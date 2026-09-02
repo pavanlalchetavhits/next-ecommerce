@@ -30,18 +30,28 @@ export async function GET(request: Request) {
             limit,
         });
 
+        const headers = {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
+        };
+
         if (result && typeof result === 'object' && 'products' in result) {
-            return NextResponse.json({
+            return NextResponse.json(
+              {
                 success: true,
                 data: result.products,
                 pagination: result.pagination,
-            });
+              },
+              { headers }
+            );
         }
 
-        return NextResponse.json({
+        return NextResponse.json(
+          {
             success: true,
             data: result,
-        });
+          },
+          { headers }
+        );
     }
     catch (error) {
         console.error('GET product error:', error);

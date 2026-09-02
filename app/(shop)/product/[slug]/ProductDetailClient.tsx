@@ -21,9 +21,7 @@ import {
   Award,
 } from 'lucide-react';
 import ProductCard from '@/components/user/ProductCard';
-
-import { useCartStore } from '@/app/store/cartstore';
-import { useWishlistStore } from '@/app/store/wishliststore';
+import { useCart, useWishlist } from '@/app/hooks';
 
 interface ProductImage {
   id?: number;
@@ -170,69 +168,14 @@ export default function ProductDetailClient({
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'care' | 'shipping' | 'faq'>('description');
   const [addedToCart, setAddedToCart] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist, actionLoadingId } = useWishlist();
 
-  const addWishlistId = useWishlistStore((state) => state.addWishlistId);
-  const removeWishlistId = useWishlistStore((state) => state.removeWishlistId);
-
-  useEffect(() => {
-    async function checkWishlist() {
-      try {
-        const res = await fetch(`/api/wishlist/check/${product.id}`);
-        const data = await res.json();
-        if (data.success && data.data?.isWishlisted) {
-          setIsWishlisted(true);
-          addWishlistId(product.id);
-        }
-      } catch (err) {
-        console.error('Wishlist check error:', err);
-      }
-    }
-    if (product.id) {
-      checkWishlist();
-    }
-  }, [product.id, addWishlistId]);
+  const isWishlisted = isInWishlist(product.id);
+  const wishlistLoading = actionLoadingId === product.id;
 
   const handleToggleWishlist = async () => {
-    if (wishlistLoading) return;
-    setWishlistLoading(true);
-
-    try {
-      if (isWishlisted) {
-        const res = await fetch(`/api/wishlist/${product.id}`, {
-          method: 'DELETE',
-        });
-        const data = await res.json();
-        if (res.status === 401) {
-          window.location.href = `/login?callbackUrl=/product/${product.slug || product.id}`;
-          return;
-        }
-        if (res.ok && data.success) {
-          setIsWishlisted(false);
-          removeWishlistId(product.id);
-        }
-      } else {
-        const res = await fetch('/api/wishlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product_id: product.id }),
-        });
-        const data = await res.json();
-        if (res.status === 401) {
-          window.location.href = `/login?callbackUrl=/product/${product.slug || product.id}`;
-          return;
-        }
-        if (res.ok && data.success) {
-          setIsWishlisted(true);
-          addWishlistId(product.id);
-        }
-      }
-    } catch (err) {
-      console.error('Wishlist toggle error:', err);
-    } finally {
-      setWishlistLoading(false);
-    }
+    await toggleWishlist(product.id);
   };
 
   const isDiscounted =
@@ -250,8 +193,6 @@ export default function ProductDetailClient({
   const cleanShortDesc = product.short_description
     ? product.short_description.replace(/<[^>]*>/g, '').trim()
     : '';
-
-  const addItem = useCartStore((state) => state.addItem);
 
   const stockQuantity = Number(product.stock_quantity ?? 99);
   const isOutOfStock = stockQuantity <= 0;
